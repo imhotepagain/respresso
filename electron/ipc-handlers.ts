@@ -50,6 +50,16 @@ export function setupIpcHandlers() {
         }
     })
 
+    ipcMain.handle('auth:checkHasUsers', async () => {
+        try {
+            const count = await db.user.count()
+            return { success: true, hasUsers: count > 0 }
+        } catch (error) {
+            console.error('Check users error:', error)
+            return { success: false, error: 'Failed to checks users' }
+        }
+    })
+
     // ==================== USERS ====================
 
     ipcMain.handle('users:getAll', async () => {

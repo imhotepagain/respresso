@@ -6,6 +6,7 @@ const api: ElectronAPI = {
   // Auth
   login: (credentials) => ipcRenderer.invoke('auth:login', credentials),
   createUser: (data) => ipcRenderer.invoke('auth:createUser', data),
+  checkHasUsers: () => ipcRenderer.invoke('auth:checkHasUsers'),
 
   // Users
   getAllUsers: () => ipcRenderer.invoke('users:getAll'),

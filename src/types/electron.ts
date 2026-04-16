@@ -120,6 +120,7 @@ export interface ElectronAPI {
     // Auth
     login: (credentials: { name: string; password: string }) => Promise<{ success: boolean; user?: User; error?: string }>
     createUser: (data: { name: string; password: string; role: string }) => Promise<{ success: boolean; user?: User; error?: string }>
+    checkHasUsers: () => Promise<{ success: boolean; hasUsers: boolean; error?: string }>
 
     // Users
     getAllUsers: () => Promise<{ success: boolean; users?: User[]; error?: string }>

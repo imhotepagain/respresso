@@ -1,4 +1,5 @@
 import { BrowserRouter as Router, Routes, Route, Navigate } from 'react-router-dom'
+import React, { useState, useEffect } from "react"
 import { AuthProvider, useAuth } from './providers/AuthProvider'
 import { MainLayout } from './layouts/MainLayout'
 import { Login } from './pages/Login'
@@ -9,6 +10,7 @@ import { Debts } from './pages/Debts'
 import { Sessions } from './pages/Sessions'
 import { Reports } from './pages/Reports'
 import { Team } from './pages/Team'
+import { Setup } from './pages/Setup'
 import './index.css'
 
 const ProtectedRoute = ({ children, role }: { children: React.ReactNode; role?: 'OWNER' }) => {
@@ -34,10 +36,38 @@ const ProtectedRoute = ({ children, role }: { children: React.ReactNode; role?: 
 }
 
 function AppContent() {
+    const [isChecking, setIsChecking] = useState(true)
+    const [needsSetup, setNeedsSetup] = useState(false)
+
+    useEffect(() => {
+        const checkSetup = async () => {
+            try {
+                const result = await window.api.checkHasUsers()
+                if (result.success && !result.hasUsers) {
+                    setNeedsSetup(true)
+                }
+            } catch (e) {
+                console.error(e)
+            } finally {
+                setIsChecking(false)
+            }
+        }
+        checkSetup()
+    }, [])
+
+    if (isChecking) {
+        return (
+            <div className="min-h-screen flex items-center justify-center bg-background">
+                <div className="animate-pulse text-xl font-bold text-primary">Initializing System...</div>
+            </div>
+        )
+    }
+
     return (
         <Router>
             <Routes>
-                <Route path="/login" element={<Login />} />
+                <Route path="/setup" element={needsSetup ? <Setup /> : <Navigate to="/login" />} />
+                <Route path="/login" element={needsSetup ? <Navigate to="/setup" /> : <Login />} />
 
                 <Route path="/" element={
                     <ProtectedRoute>
