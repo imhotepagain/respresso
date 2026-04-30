@@ -856,6 +856,191 @@ export function setupIpcHandlers() {
         }
     })
 
+    // ==================== SHIFTS ====================
+
+    ipcMain.handle('shifts:start', async (_, data: { userId: string; startCash: number; notes?: string }) => {
+        try {
+            const activeShift = await db.shift.findFirst({
+                where: { userId: data.userId, status: 'OPEN' }
+            })
+
+            if (activeShift) {
+                return { success: false, error: 'You already have an active shift' }
+            }
+
+            const shift = await db.shift.create({
+                data: {
+                    userId: data.userId,
+                    startCash: data.startCash,
+                    notes: data.notes,
+                    status: 'OPEN'
+                },
+                include: { user: { select: { name: true } } }
+            })
+
+            return { success: true, shift }
+        } catch (error) {
+            console.error('Start shift error:', error)
+            return { success: false, error: 'Failed to start shift' }
+        }
+    })
+
+    ipcMain.handle('shifts:end', async (_, data: { id: string; endCash: number; notes?: string }) => {
+        try {
+            const shift = await db.shift.findUnique({ where: { id: data.id } })
+            if (!shift) return { success: false, error: 'Shift not found' }
+
+            // Calculate expected cash
+            // 1. Paid orders
+            const orders = await db.order.findMany({
+                where: {
+                    staffId: shift.userId,
+                    isPaid: true,
+                    createdAt: { gte: shift.startTime, lte: new Date() }
+                }
+            })
+            const ordersTotal = orders.reduce((sum, o) => sum + o.total, 0)
+
+            // 2. Completed sessions
+            const sessions = await db.session.findMany({
+                where: {
+                    status: 'COMPLETED',
+                    updatedAt: { gte: shift.startTime, lte: new Date() }
+                }
+            })
+            const sessionsTotal = sessions.reduce((sum, s) => sum + (s.cost || 0), 0)
+
+            // 3. Debt payments
+            // Note: Currently DebtPayment doesn't have a staffId, but we can filter by date
+            // For a better implementation, we'd add staffId to DebtPayment too.
+            const debtPayments = await db.debtPayment.findMany({
+                where: {
+                    createdAt: { gte: shift.startTime, lte: new Date() }
+                }
+            })
+            const debtTotal = debtPayments.reduce((sum, p) => sum + p.amount, 0)
+
+            // 4. Expenses
+            const expenses = await db.expense.findMany({
+                where: {
+                    userId: shift.userId,
+                    date: { gte: shift.startTime, lte: new Date() }
+                }
+            })
+            const expensesTotal = expenses.reduce((sum, e) => sum + e.amount, 0)
+
+            const expectedCash = shift.startCash + ordersTotal + sessionsTotal + debtTotal - expensesTotal
+
+            const updatedShift = await db.shift.update({
+                where: { id: data.id },
+                data: {
+                    endTime: new Date(),
+                    endCash: data.endCash,
+                    expectedCash,
+                    status: 'CLOSED',
+                    notes: data.notes ? `${shift.notes || ''}\n${data.notes}` : shift.notes
+                }
+            })
+
+            return { success: true, shift: updatedShift }
+        } catch (error) {
+            console.error('End shift error:', error)
+            return { success: false, error: 'Failed to end shift' }
+        }
+    })
+
+    ipcMain.handle('shifts:getCurrent', async (_, userId: string) => {
+        try {
+            const shift = await db.shift.findFirst({
+                where: { userId, status: 'OPEN' },
+                include: { user: { select: { name: true } } }
+            })
+            return { success: true, shift }
+        } catch (error) {
+            console.error('Get current shift error:', error)
+            return { success: false, error: 'Failed to fetch current shift' }
+        }
+    })
+
+    ipcMain.handle('shifts:getAll', async () => {
+        try {
+            const shifts = await db.shift.findMany({
+                include: { user: { select: { name: true } } },
+                orderBy: { startTime: 'desc' }
+            })
+            return { success: true, shifts }
+        } catch (error) {
+            console.error('Get all shifts error:', error)
+            return { success: false, error: 'Failed to fetch shifts' }
+        }
+    })
+
+    ipcMain.handle('reports:getFinancialStats', async (_, period: 'daily' | 'weekly' | 'monthly') => {
+        try {
+            const now = new Date()
+            let startDate = new Date()
+            
+            if (period === 'daily') startDate.setHours(0, 0, 0, 0)
+            else if (period === 'weekly') startDate.setDate(now.getDate() - 7)
+            else if (period === 'monthly') startDate.setDate(now.getDate() - 30)
+
+            const dateFilter = { gte: startDate }
+
+            const [orders, sessions, expenses, debtPayments] = await Promise.all([
+                db.order.findMany({ where: { createdAt: dateFilter, isPaid: true } }),
+                db.session.findMany({ where: { createdAt: dateFilter, status: 'COMPLETED' } }),
+                db.expense.findMany({ where: { date: dateFilter } }),
+                db.debtPayment.findMany({ where: { createdAt: dateFilter } })
+            ])
+
+            const revenueFromOrders = orders.reduce((sum, o) => sum + o.total, 0)
+            const revenueFromSessions = sessions.reduce((sum, s) => sum + (s.cost || 0), 0)
+            const revenueFromDebt = debtPayments.reduce((sum, p) => sum + p.amount, 0)
+            const totalRevenue = revenueFromOrders + revenueFromSessions + revenueFromDebt
+            
+            const totalExpenses = expenses.reduce((sum, e) => sum + e.amount, 0)
+            
+            // Group data for charts
+            const revenueByDay: Record<string, number> = {}
+            const expensesByDay: Record<string, number> = {}
+
+            // Helper to format date key
+            const fmt = (d: Date) => d.toLocaleDateString('en-US', { month: 'short', day: 'numeric' })
+
+            // Initialize last 7 or 30 days
+            const daysToCover = period === 'daily' ? 1 : (period === 'weekly' ? 7 : 30)
+            for (let i = 0; i < daysToCover; i++) {
+                const d = new Date()
+                d.setDate(d.getDate() - i)
+                const key = fmt(d)
+                revenueByDay[key] = 0
+                expensesByDay[key] = 0
+            }
+
+            orders.forEach(o => { const k = fmt(o.createdAt); revenueByDay[k] = (revenueByDay[k] || 0) + o.total })
+            sessions.forEach(s => { const k = fmt(s.createdAt); revenueByDay[k] = (revenueByDay[k] || 0) + (s.cost || 0) })
+            debtPayments.forEach(p => { const k = fmt(p.createdAt); revenueByDay[k] = (revenueByDay[k] || 0) + p.amount })
+            expenses.forEach(e => { const k = fmt(e.date); expensesByDay[k] = (expensesByDay[k] || 0) + e.amount })
+
+            return {
+                success: true,
+                stats: {
+                    revenue: totalRevenue,
+                    expenses: totalExpenses,
+                    profit: totalRevenue - totalExpenses,
+                    ordersCount: orders.length,
+                    sessionsCount: sessions.length,
+                    revenueByDay: Object.entries(revenueByDay).map(([date, amount]) => ({ date, amount })).reverse(),
+                    expensesByDay: Object.entries(expensesByDay).map(([date, amount]) => ({ date, amount })).reverse(),
+                    topProducts: [] // Logic to be added if needed, but keeping it simple for now
+                }
+            }
+        } catch (error) {
+            console.error('Financial stats error:', error)
+            return { success: false, error: 'Failed to fetch financial stats' }
+        }
+    })
+
     // ==================== BACKUPS ====================
     ipcMain.handle('backups:list', async () => {
         const { BackupService } = await import('./backup')

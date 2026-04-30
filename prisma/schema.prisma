@@ -22,6 +22,7 @@ model User {
   orders       Order[]        @relation("ClientOrders")
   sessions     Session[]
   expenses     Expense[]
+  shifts       Shift[]
 }
 
 model Product {
@@ -107,4 +108,19 @@ model Expense {
   updatedAt   DateTime @updatedAt
   userId      String?
   user        User?    @relation(fields: [userId], references: [id])
+}
+
+model Shift {
+  id           String    @id @default(cuid())
+  userId       String
+  startTime    DateTime  @default(now())
+  endTime      DateTime?
+  startCash    Float     @default(0)
+  endCash      Float?
+  expectedCash Float?
+  status       String    @default("OPEN") // OPEN, CLOSED
+  notes        String?
+  createdAt    DateTime  @default(now())
+  updatedAt    DateTime  @updatedAt
+  user         User      @relation(fields: [userId], references: [id])
 }

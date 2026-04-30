@@ -181,7 +181,29 @@ export interface ElectronAPI {
     // Expenses
     getExpenses: (options?: { from?: Date; to?: Date }) => Promise<{ success: boolean; expenses?: Expense[]; error?: string }>
     createExpense: (data: { amount: number; category: string; description?: string; date?: Date; userId?: string }) => Promise<{ success: boolean; expense?: Expense; error?: string }>
-    deleteExpense: (id: string) => Promise<{ success: boolean; error?: string }>
+    deleteExpense: (id: string) => Promise<{ success: boolean; error?: string }>;
+    
+    // Shifts
+    startShift: (data: { userId: string; startCash: number; notes?: string }) => Promise<{ success: boolean; shift?: Shift; error?: string }>;
+    endShift: (data: { id: string; endCash: number; notes?: string }) => Promise<{ success: boolean; shift?: Shift; error?: string }>;
+    getCurrentShift: (userId: string) => Promise<{ success: boolean; shift?: Shift | null; error?: string }>;
+    getAllShifts: () => Promise<{ success: boolean; shifts?: Shift[]; error?: string }>;
+
+    // Analytics
+    getFinancialStats: (period: 'daily' | 'weekly' | 'monthly') => Promise<{ 
+        success: boolean; 
+        stats?: {
+            revenue: number;
+            expenses: number;
+            profit: number;
+            ordersCount: number;
+            sessionsCount: number;
+            topProducts: { name: string; count: number; revenue: number }[];
+            revenueByDay: { date: string; amount: number }[];
+            expensesByDay: { date: string; amount: number }[];
+        }; 
+        error?: string;
+    }>;
 
     // Reports
     getAnalytics: (options?: { days?: number }) => Promise<{

@@ -9,6 +9,9 @@ import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs"
 import { ShoppingCart, Trash2, CreditCard, Wallet, Plus, Minus, Search, Coffee, Utensils, Briefcase, ShoppingBag, Loader2, CheckCircle, Infinity } from "lucide-react"
 import { useAuth } from "@/providers/AuthProvider"
 import { cn } from "@/lib/utils"
+import { Shift } from "@/types/electron"
+import { toast } from "sonner"
+import { useNavigate } from "react-router-dom"
 
 type CartItem = Product & { cartQuantity: number }
 
@@ -23,6 +26,8 @@ export const POS: React.FC = () => {
     const [searchTerm, setSearchTerm] = useState("")
     const [activeCategory, setActiveCategory] = useState("ALL")
     const [orderSuccess, setOrderSuccess] = useState(false)
+    const [currentShift, setCurrentShift] = useState<Shift | null>(null)
+    const navigate = useNavigate()
 
     const fetchData = async () => {
         setFetching(true)
@@ -34,6 +39,13 @@ export const POS: React.FC = () => {
         if (userResult.success && userResult.users) {
             setClients(userResult.users.filter(u => u.role === 'CLIENT'))
         }
+        
+        // Fetch current shift
+        if (currentUser?.id) {
+            const shiftRes = await window.api.getCurrentShift(currentUser.id)
+            if (shiftRes.success) setCurrentShift(shiftRes.shift || null)
+        }
+        
         setFetching(false)
     }
 
@@ -112,7 +124,30 @@ export const POS: React.FC = () => {
         return (
             <div className="flex flex-col items-center justify-center h-[60vh] gap-4">
                 <Loader2 className="h-8 w-8 animate-spin text-primary" />
-                <p className="text-muted-foreground">Loading POS System...</p>
+                <p className="text-muted-foreground font-bold">Loading POS System...</p>
+            </div>
+        )
+    }
+
+    if (!currentShift) {
+        return (
+            <div className="flex flex-col items-center justify-center h-[80vh] animate-in fade-in zoom-in duration-500">
+                <div className="bg-card p-12 rounded-[3rem] border-4 border-dashed flex flex-col items-center gap-8 shadow-2xl text-center max-w-lg mx-auto">
+                    <div className="bg-muted p-8 rounded-full">
+                        <ShoppingBag className="h-20 w-20 text-muted-foreground opacity-20" />
+                    </div>
+                    <div className="space-y-2">
+                        <h2 className="text-3xl font-black tracking-tight">Register is Closed</h2>
+                        <p className="text-muted-foreground font-medium">You must open your cash register and log your starting balance before making sales.</p>
+                    </div>
+                    <Button 
+                        size="lg" 
+                        className="w-full h-16 rounded-2xl font-black text-xl shadow-xl shadow-primary/20 active:scale-95 transition-all"
+                        onClick={() => navigate('/shifts')}
+                    >
+                        OPEN REGISTER NOW
+                    </Button>
+                </div>
             </div>
         )
     }

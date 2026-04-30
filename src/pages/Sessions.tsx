@@ -19,7 +19,8 @@ import {
     Clock,
     Infinity,
     Timer,
-    Bell
+    Bell,
+    Monitor
 } from 'lucide-react'
 import {
     Dialog,
@@ -35,6 +36,7 @@ import { Label } from "@/components/ui/label"
 import { cn } from "@/lib/utils"
 
 const POSTS = [1, 2, 3, 4, 5, 6]
+const PC_POSTS = [6]
 
 const formatDuration = (seconds: number) => {
     const absSeconds = Math.abs(seconds)
@@ -74,7 +76,7 @@ const TimerCard: React.FC<{
                 if (rem <= 0 && !notifiedRef.current) {
                     notifiedRef.current = true
                     new Notification("Time's Up!", {
-                        body: `PlayStation Post ${postNumber} has finished its session.`,
+                        body: `${PC_POSTS.includes(postNumber) ? 'PC Gamer' : `Post ${postNumber}`} has finished its session.`,
                         silent: false
                     })
                 }
@@ -152,7 +154,9 @@ const TimerCard: React.FC<{
                         <Plus className="h-8 w-8 text-muted-foreground group-hover:text-primary transition-colors" />
                     </div>
                     <div className="text-center">
-                        <p className="font-black text-xl tracking-tighter uppercase">Post {postNumber}</p>
+                        <p className="font-black text-xl tracking-tighter uppercase">
+                            {PC_POSTS.includes(postNumber) ? "PC GAMER" : `Post ${postNumber}`}
+                        </p>
                         <p className="text-xs font-bold text-muted-foreground">CLICK TO START</p>
                     </div>
                 </CardContent>
@@ -172,7 +176,8 @@ const TimerCard: React.FC<{
                 isTimeUp ? "bg-destructive/10" : "bg-primary/5 text-primary"
             )}>
                 <CardTitle className="text-sm font-black flex items-center gap-2 uppercase tracking-widest">
-                    <Gamepad2 className="h-4 w-4" /> POST {postNumber}
+                    {PC_POSTS.includes(postNumber) ? <Monitor className="h-4 w-4" /> : <Gamepad2 className="h-4 w-4" />}
+                    {PC_POSTS.includes(postNumber) ? "PC GAMER" : `POST ${postNumber}`}
                 </CardTitle>
                 <div className="flex gap-2">
                     {session.limitMinutes && <Badge variant="outline" className="font-mono text-[10px] uppercase border-primary/30">{session.limitMinutes}M</Badge>}
@@ -221,7 +226,7 @@ const TimerCard: React.FC<{
             <Dialog open={isEndOpen} onOpenChange={setIsEndOpen}>
                 <DialogContent>
                     <DialogHeader>
-                        <DialogTitle>Complete Session (Post {postNumber})</DialogTitle>
+                        <DialogTitle>Complete Session ({PC_POSTS.includes(postNumber) ? "PC Gamer" : `Post ${postNumber}`})</DialogTitle>
                         <DialogDescription>
                             Total Duration: {Math.ceil(elapsed / 60)} minutes<br />
                             GLISSA Rate: Calculated based on Day/Evening Menu.
@@ -319,8 +324,8 @@ export const Sessions: React.FC = () => {
     return (
         <div className="space-y-8 animate-in fade-in duration-500">
             <div>
-                <h1 className="text-3xl font-black tracking-tight">PlayStation Tracker</h1>
-                <p className="text-muted-foreground uppercase font-bold text-xs tracking-widest">Live Multiverse Monitoring • 6 Active Posts</p>
+                <h1 className="text-3xl font-black tracking-tight">Gaming Station Tracker</h1>
+                <p className="text-muted-foreground uppercase font-bold text-xs tracking-widest">Live Monitoring • 5 PS Posts & 1 PC Gamer</p>
             </div>
 
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
@@ -364,7 +369,9 @@ export const Sessions: React.FC = () => {
                                 </TableRow>
                             ) : history.map(s => (
                                 <TableRow key={s.id} className="hover:bg-muted/30 transition-colors">
-                                    <TableCell className="font-black">POST {s.postNumber || '-'}</TableCell>
+                                    <TableCell className="font-black">
+                                        {PC_POSTS.includes(s.postNumber || 0) ? "PC GAMER" : `POST ${s.postNumber || '-'}`}
+                                    </TableCell>
                                     <TableCell className="font-bold">{s.duration || 0} min</TableCell>
                                     <TableCell className="font-black text-primary">{s.cost ? `${s.cost.toFixed(2)} DH` : '-'}</TableCell>
                                     <TableCell className="text-xs font-medium text-muted-foreground">
@@ -389,9 +396,11 @@ export const Sessions: React.FC = () => {
             <Dialog open={isStartOpen} onOpenChange={setIsStartOpen}>
                 <DialogContent className="sm:max-w-[400px]">
                     <DialogHeader>
-                        <DialogTitle className="text-2xl font-black">START POST {selectedPost}</DialogTitle>
+                        <DialogTitle className="text-2xl font-black">
+                            START {PC_POSTS.includes(selectedPost || 0) ? "PC GAMER" : `POST ${selectedPost}`}
+                        </DialogTitle>
                         <DialogDescription className="font-bold text-xs uppercase tracking-widest">
-                            Choose session mode for Station {selectedPost}
+                            Choose session mode for {PC_POSTS.includes(selectedPost || 0) ? "PC Gamer Station" : `Station ${selectedPost}`}
                         </DialogDescription>
                     </DialogHeader>
 

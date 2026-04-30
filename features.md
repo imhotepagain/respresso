@@ -38,9 +38,17 @@ This document outlines all the core features currently implemented in the Respre
 - **Setup Initialization**: Secure setup screen checking if the system has initial users.
 - **Authentication**: Login protections for application usage.
 
-## 6. Reports & System Overview
-- **Analytics Dashboard**: Overview of live data and historical operations.
-- **Data Export/Metrics**: Insights into total revenue, most popular items, or busiest station (based on implicit POS structure). 
+## 6. Shift & Register Management
+- **Shift Enforcement**: Prevents POS sales until a staff member opens their register.
+- **Cash Control**: Track starting balance, expected cash (Sales + Repayments - Expenses), and actual end-of-day cash.
+- **Discrepancy Reporting**: Automatically flags "Over/Under" cash amounts for audit.
+- **Session History**: Detailed logs of every staff shift with timeframe and notes.
 
+## 7. Advanced Financial Analytics
+- **Profit & Loss Tracking**: Real-time comparison between Gross Revenue (Inflows) and Total Expenses (Outflows).
+- **Interactive Visualizations**: High-end charts (Area & Bar) for tracking business performance trends.
+- **Period Filtering**: Review data by Daily, Weekly, or Monthly performance.
+- **Financial Health KPIs**: Instant insight into Net Profit and daily burn rates.
+- **Activity Monitoring**: Full traceability of all inventory changes and system actions.
 ---
 *Since your new platform will be built for a tablet in standby mode, consider emphasizing touch-friendly large targets (already somewhat present in the UI cards) and a streamlined "always-on" dashboard approach, minimizing clicks.*

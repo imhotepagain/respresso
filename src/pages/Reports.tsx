@@ -17,6 +17,7 @@ import { Button } from "@/components/ui/button"
 import { useAuth } from "@/providers/AuthProvider"
 import { AnalyticsCharts } from "@/components/reports/AnalyticsCharts"
 import { ActivityLog } from "@/components/reports/ActivityLog"
+import { FinancialAnalytics } from "@/components/reports/FinancialAnalytics"
 
 interface StatsType {
     revenue: {
@@ -240,28 +241,7 @@ export const Reports: React.FC = () => {
                 </TabsList>
 
                 <TabsContent value="financial" className="space-y-6">
-                    <Tabs defaultValue="daily" className="w-full">
-                        <div className="flex items-center justify-between mb-4">
-                            <TabsList className="bg-muted px-1 h-9 rounded-lg">
-                                <TabsTrigger value="daily" className="text-xs font-bold px-4 h-7 rounded-md data-[state=active]:bg-background">DAILY</TabsTrigger>
-                                <TabsTrigger value="weekly" className="text-xs font-bold px-4 h-7 rounded-md data-[state=active]:bg-background">WEEKLY</TabsTrigger>
-                            </TabsList>
-                        </div>
-
-                        <TabsContent value="daily" className="mt-0">
-                            <SummaryTab
-                                stats={dailyStats}
-                                subtitle={new Date().toLocaleDateString(undefined, { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' })}
-                            />
-                        </TabsContent>
-
-                        <TabsContent value="weekly" className="mt-0">
-                            <SummaryTab
-                                stats={weeklyStats}
-                                subtitle="Current Business Week (Mon - Today)"
-                            />
-                        </TabsContent>
-                    </Tabs>
+                    <FinancialAnalytics />
                 </TabsContent>
 
                 <TabsContent value="analytics" className="space-y-8 animate-in slide-in-from-bottom-4 duration-500">

@@ -44,6 +44,15 @@ const api: ElectronAPI = {
   createExpense: (data) => ipcRenderer.invoke('expenses:create', data),
   deleteExpense: (id) => ipcRenderer.invoke('expenses:delete', id),
 
+  // Shifts
+  startShift: (data) => ipcRenderer.invoke('shifts:start', data),
+  endShift: (data) => ipcRenderer.invoke('shifts:end', data),
+  getCurrentShift: (userId) => ipcRenderer.invoke('shifts:getCurrent', userId),
+  getAllShifts: () => ipcRenderer.invoke('shifts:getAll'),
+
+  // Analytics
+  getFinancialStats: (period) => ipcRenderer.invoke('reports:getFinancialStats', period),
+
   // Reports
   getAnalytics: (options) => ipcRenderer.invoke('reports:getAnalytics', options),
   getActivityLogs: (options) => ipcRenderer.invoke('inventory:getActivityLogs', options),

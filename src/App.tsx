@@ -14,6 +14,7 @@ import { Team } from './pages/Team'
 import { Settings } from './pages/Settings'
 import { Setup } from './pages/Setup'
 import { Billing } from './pages/Billing'
+import { Shifts } from './pages/Shifts'
 import { Toaster } from 'sonner'
 import './index.css'
 
@@ -108,6 +109,7 @@ function AppContent() {
                 <Route path="/debts" element={<ProtectedRoute><MainLayout><Debts /></MainLayout></ProtectedRoute>} />
                 <Route path="/sessions" element={<ProtectedRoute><MainLayout><Sessions /></MainLayout></ProtectedRoute>} />
                 <Route path="/billing" element={<ProtectedRoute role="OWNER"><MainLayout><Billing /></MainLayout></ProtectedRoute>} />
+                <Route path="/shifts" element={<ProtectedRoute><MainLayout><Shifts /></MainLayout></ProtectedRoute>} />
                 <Route path="/reports" element={<ProtectedRoute><MainLayout><Reports /></MainLayout></ProtectedRoute>} />
                 <Route path="/team" element={<ProtectedRoute role="OWNER"><MainLayout><Team /></MainLayout></ProtectedRoute>} />
                 <Route path="/settings" element={<ProtectedRoute role="OWNER"><MainLayout><Settings /></MainLayout></ProtectedRoute>} />
