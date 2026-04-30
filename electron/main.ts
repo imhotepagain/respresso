@@ -3,6 +3,7 @@ import { fileURLToPath } from 'node:url'
 import path from 'node:path'
 import { initDatabase, closeDatabase } from './database'
 import { setupIpcHandlers } from './ipc-handlers'
+import { BackupService } from './backup'
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url))
 
@@ -70,6 +71,10 @@ app.whenReady().then(() => {
   // Initialize database and IPC handlers
   initDatabase()
   setupIpcHandlers()
+  
+  // Initialize Backup Service and perform initial backup
+  BackupService.init()
+  BackupService.createBackup()
+  
   createWindow()
 })
-

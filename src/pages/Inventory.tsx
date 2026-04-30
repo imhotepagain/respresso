@@ -15,7 +15,8 @@ import {
     Plus,
     Search,
     Loader2,
-    AlertCircle
+    AlertCircle,
+    Infinity
 } from 'lucide-react'
 import {
     Dialog,
@@ -232,6 +233,11 @@ export const Inventory: React.FC = () => {
                                 <TableCell>
                                     {product.type === 'SERVICE' ? (
                                         <span className="text-muted-foreground text-xs uppercase tracking-tighter">Unlimited</span>
+                                    ) : product.stock >= 900000 ? (
+                                        <div className="flex items-center gap-1 text-muted-foreground font-bold">
+                                            <Infinity className="h-4 w-4" />
+                                            <span className="text-xs tracking-tighter uppercase">Available</span>
+                                        </div>
                                     ) : (
                                         <div className="flex items-center gap-2">
                                             <span className={cn(
@@ -245,6 +251,8 @@ export const Inventory: React.FC = () => {
                                 <TableCell>
                                     {product.type === 'SERVICE' ? (
                                         <Badge className="bg-emerald-100 text-emerald-700 hover:bg-emerald-100 border-emerald-200">Active</Badge>
+                                    ) : product.stock >= 900000 ? (
+                                        <Badge className="bg-blue-100 text-blue-700 hover:bg-blue-100 border-blue-200">Always In Stock</Badge>
                                     ) : product.stock <= 0 ? (
                                         <Badge variant="destructive">Out of Stock</Badge>
                                     ) : product.stock <= 10 ? (

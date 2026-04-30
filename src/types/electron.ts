@@ -79,6 +79,18 @@ export interface DebtPayment {
     createdAt: Date
 }
 
+export interface Expense {
+    id: string
+    amount: number
+    category: string
+    description: string | null
+    date: Date
+    createdAt: Date
+    updatedAt: Date
+    userId: string | null
+    user: { id: string; name: string } | null
+}
+
 export interface DailyStats {
     revenue: {
         total: number
@@ -166,6 +178,11 @@ export interface ElectronAPI {
     getDebtPayments: (userId?: string) => Promise<{ success: boolean; payments?: DebtPayment[]; error?: string }>
     addDebtPayment: (data: { userId: string; amount: number }) => Promise<{ success: boolean; payment?: DebtPayment; error?: string }>
 
+    // Expenses
+    getExpenses: (options?: { from?: Date; to?: Date }) => Promise<{ success: boolean; expenses?: Expense[]; error?: string }>
+    createExpense: (data: { amount: number; category: string; description?: string; date?: Date; userId?: string }) => Promise<{ success: boolean; expense?: Expense; error?: string }>
+    deleteExpense: (id: string) => Promise<{ success: boolean; error?: string }>
+
     // Reports
     getAnalytics: (options?: { days?: number }) => Promise<{
         success: boolean
@@ -194,8 +211,14 @@ export interface ElectronAPI {
     getStats: (options: { from: string | Date; to: string | Date; userId?: string }) => Promise<{ success: boolean; stats?: DailyStats; error?: string }>
 
     // Dashboard
-    getDashboardStats: () => Promise<{ success: boolean; stats?: { userCount: number; activeSessions: number; productCount: number; totalDebt: number }; error?: string }>
+    getDashboardStats: () => Promise<{ success: boolean; stats?: { userCount: number; activeSessions: number; productCount: number; totalDebt: number; lowStock?: any[] }; error?: string }>
+
+    // Backups
+    listBackups: () => Promise<Array<{ name: string; path: string; createdAt: Date; size: number }>>
+    createBackup: () => Promise<{ success: boolean; path?: string; name?: string; error?: string }>
+    exportBackup: () => Promise<{ success: boolean; path?: string; error?: string }>
 }
+
 
 declare global {
     interface Window {

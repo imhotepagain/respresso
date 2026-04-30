@@ -21,8 +21,10 @@ import {
     ChevronRight,
     Shield,
     User,
+    Settings as SettingsIcon,
     Sun,
-    Moon
+    Moon,
+    Receipt
 } from 'lucide-react'
 import { useTheme } from '../providers/ThemeProvider'
 
@@ -40,7 +42,9 @@ export const MainLayout: React.FC<{ children: React.ReactNode }> = ({ children }
         { href: '/inventory', label: 'Inventory', icon: Package },
         { href: '/debts', label: 'Clients & Debts', icon: Users },
         { href: '/sessions', label: 'PS Sessions', icon: Gamepad2 },
+        { href: '/billing', label: 'Bills & Expenses', icon: Receipt, adminOnly: true },
         { href: '/team', label: 'Team', icon: Shield, adminOnly: true },
+        { href: '/settings', label: 'Settings', icon: SettingsIcon, adminOnly: true },
     ]
 
     const handleLogout = () => {
@@ -59,7 +63,7 @@ export const MainLayout: React.FC<{ children: React.ReactNode }> = ({ children }
                 >
                     <div className={cn("flex items-center gap-2 px-2 py-4 mb-4", isCollapsed && "justify-center")}>
                         <Gamepad2 className="h-6 w-6 text-primary shrink-0" />
-                        {!isCollapsed && <span className="text-xl font-bold tracking-tight truncate">Respresso</span>}
+                        {!isCollapsed && <span className="text-xl font-bold tracking-tight truncate">GLISSA</span>}
 
                         <Button
                             variant="ghost"

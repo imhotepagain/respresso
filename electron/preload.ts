@@ -39,6 +39,11 @@ const api: ElectronAPI = {
   getDebtPayments: (userId) => ipcRenderer.invoke('debt:getPayments', userId),
   addDebtPayment: (data) => ipcRenderer.invoke('debt:addPayment', data),
 
+  // Expenses
+  getExpenses: (options) => ipcRenderer.invoke('expenses:getAll', options),
+  createExpense: (data) => ipcRenderer.invoke('expenses:create', data),
+  deleteExpense: (id) => ipcRenderer.invoke('expenses:delete', id),
+
   // Reports
   getAnalytics: (options) => ipcRenderer.invoke('reports:getAnalytics', options),
   getActivityLogs: (options) => ipcRenderer.invoke('inventory:getActivityLogs', options),
@@ -46,7 +51,13 @@ const api: ElectronAPI = {
 
   // Dashboard
   getDashboardStats: () => ipcRenderer.invoke('dashboard:getStats'),
+
+  // Backups
+  listBackups: () => ipcRenderer.invoke('backups:list'),
+  createBackup: () => ipcRenderer.invoke('backups:create'),
+  exportBackup: () => ipcRenderer.invoke('backups:export'),
 }
+
 
 
 contextBridge.exposeInMainWorld('api', api)

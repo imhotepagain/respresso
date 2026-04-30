@@ -92,14 +92,29 @@ const TimerCard: React.FC<{
     }, [session, postNumber])
 
     const calculateSuggestedCost = () => {
-        if (session?.limitMinutes) {
-            // If it's a fixed time session, suggest cost based on that time
-            const matches = Math.ceil(session.limitMinutes / 14)
-            return matches * 5
+        let durationMinutes = session?.limitMinutes ? session.limitMinutes : Math.ceil(elapsed / 60)
+        
+        // Determine if Day or Evening session
+        const startHour = session ? new Date(session.startTime).getHours() : new Date().getHours()
+        const isDaySession = startHour >= 9 && startHour < 15
+
+        if (isDaySession) {
+            if (durationMinutes <= 12) return 5
+            if (durationMinutes <= 30) return 10
+            if (durationMinutes <= 60) return 20
+            if (durationMinutes <= 120) return 25
+            // Extra time extrapolation (approx 12.5 DH/hr after 2 hours, round to nearest 5)
+            const extraHours = Math.ceil((durationMinutes - 120) / 60)
+            return 25 + (extraHours * 15)
+        } else {
+            if (durationMinutes <= 12) return 5
+            if (durationMinutes <= 30) return 15
+            if (durationMinutes <= 60) return 25
+            if (durationMinutes <= 120) return 35
+            // Extra time extrapolation (approx 17.5 DH/hr after 2 hours, round to nearest 5)
+            const extraHours = Math.ceil((durationMinutes - 120) / 60)
+            return 35 + (extraHours * 15)
         }
-        const minutes = Math.ceil(elapsed / 60)
-        const matches = Math.ceil(minutes / 14)
-        return matches * 5
     }
 
     const handleStop = async () => {
@@ -209,7 +224,7 @@ const TimerCard: React.FC<{
                         <DialogTitle>Complete Session (Post {postNumber})</DialogTitle>
                         <DialogDescription>
                             Total Duration: {Math.ceil(elapsed / 60)} minutes<br />
-                            Standard Rate: 5 DH per 14-min match
+                            GLISSA Rate: Calculated based on Day/Evening Menu.
                         </DialogDescription>
                     </DialogHeader>
                     <div className="py-4 space-y-4">

@@ -40,7 +40,7 @@ export const Login: React.FC = () => {
         <div className="min-h-screen flex flex-col items-center justify-center bg-muted/30 p-4">
             <div className="flex items-center gap-2 mb-8 animate-in fade-in slide-in-from-bottom-4 duration-1000">
                 <Gamepad2 className="h-10 w-10 text-primary" />
-                <h1 className="text-4xl font-extrabold tracking-tight">Respresso</h1>
+                <h1 className="text-4xl font-extrabold tracking-tight">GLISSA</h1>
             </div>
 
             <Card className="w-full max-w-[400px] shadow-xl border-t-4 border-t-primary animate-in zoom-in-95 duration-500">

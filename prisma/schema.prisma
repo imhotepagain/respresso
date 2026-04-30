@@ -21,6 +21,7 @@ model User {
   staffOrders  Order[]        @relation("StaffOrders")
   orders       Order[]        @relation("ClientOrders")
   sessions     Session[]
+  expenses     Expense[]
 }
 
 model Product {
@@ -94,4 +95,16 @@ model DebtPayment {
   amount    Float
   createdAt DateTime @default(now())
   user      User     @relation(fields: [userId], references: [id])
+}
+
+model Expense {
+  id          String   @id @default(cuid())
+  amount      Float
+  category    String   
+  description String?
+  date        DateTime @default(now())
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+  userId      String?
+  user        User?    @relation(fields: [userId], references: [id])
 }

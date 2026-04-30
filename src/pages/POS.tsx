@@ -4,10 +4,9 @@ import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Card, CardContent } from "@/components/ui/card"
 import { Badge } from "@/components/ui/badge"
-import { ScrollArea } from "@/components/ui/scroll-area"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
 import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs"
-import { ShoppingCart, Trash2, CreditCard, Wallet, Plus, Minus, Search, Coffee, Utensils, Briefcase, ShoppingBag, Loader2, CheckCircle } from "lucide-react"
+import { ShoppingCart, Trash2, CreditCard, Wallet, Plus, Minus, Search, Coffee, Utensils, Briefcase, ShoppingBag, Loader2, CheckCircle, Infinity } from "lucide-react"
 import { useAuth } from "@/providers/AuthProvider"
 import { cn } from "@/lib/utils"
 
@@ -119,119 +118,142 @@ export const POS: React.FC = () => {
     }
 
     return (
-        <div className="flex flex-col h-full gap-4 animate-in fade-in duration-500">
-            <div className="flex justify-between items-center">
-                <div>
-                    <h1 className="text-3xl font-bold tracking-tight">Point of Sale</h1>
-                    <p className="text-muted-foreground text-sm">Create orders and manage customer transactions.</p>
+        <div className="flex flex-col h-[calc(100vh-2rem)] gap-6 animate-in fade-in duration-300">
+            {/* Header Area */}
+            <div className="flex justify-between items-end px-2">
+                <div className="space-y-1">
+                    <h1 className="text-3xl font-black tracking-tight text-foreground">
+                        Point of Sale
+                    </h1>
+                    <p className="text-muted-foreground font-medium flex items-center gap-2 text-sm">
+                        <span className="w-2 h-2 rounded-full bg-emerald-500 animate-pulse"></span>
+                        System Ready
+                    </p>
                 </div>
                 {orderSuccess && (
-                    <div className="flex items-center gap-2 text-emerald-600 bg-emerald-50 px-4 py-2 rounded-full border border-emerald-200 animate-in slide-in-from-right-4">
+                    <div className="flex items-center gap-2 text-emerald-600 bg-emerald-50 px-4 py-2 rounded-full border border-emerald-200 animate-in slide-in-from-right-4 shadow-sm">
                         <CheckCircle className="h-5 w-5" />
-                        <span className="font-medium">Order successful!</span>
+                        <span className="font-bold text-sm tracking-wide">ORDER COMPLETED</span>
                     </div>
                 )}
             </div>
 
             <div className="flex-1 flex gap-6 overflow-hidden">
-                {/* Main Content: Products */}
+                {/* Main Content Area */}
                 <div className="flex-1 flex flex-col gap-4 overflow-hidden">
-                    {/* Search and Categories */}
-                    <div className="flex gap-4 items-center bg-card p-3 rounded-xl border shadow-sm">
-                        <div className="relative flex-1 max-w-sm">
-                            <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+                    {/* Top Controls: Search & Tabs */}
+                    <div className="flex flex-col xl:flex-row gap-4 items-center bg-card p-3 rounded-2xl border shadow-sm">
+                        <div className="relative w-full xl:w-80">
+                            <Search className="absolute left-3.5 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
                             <Input
-                                placeholder="Search products..."
+                                placeholder="Search menu..."
                                 value={searchTerm}
                                 onChange={(e) => setSearchTerm(e.target.value)}
-                                className="pl-10 h-10"
+                                className="pl-10 h-11 bg-background rounded-xl border-muted-foreground/20 focus-visible:ring-1 focus-visible:border-primary transition-all"
                             />
                         </div>
 
-                        <Tabs value={activeCategory} onValueChange={setActiveCategory} className="flex-1">
-                            <TabsList className="grid w-full grid-cols-4 max-w-[500px]">
-                                <TabsTrigger value="ALL">All</TabsTrigger>
-                                <TabsTrigger value="SNACK">Snacks</TabsTrigger>
-                                <TabsTrigger value="DRINK">Drinks</TabsTrigger>
-                                <TabsTrigger value="SERVICE">Services</TabsTrigger>
+                        <Tabs value={activeCategory} onValueChange={setActiveCategory} className="flex-1 w-full overflow-x-auto hide-scrollbar">
+                            <TabsList className="flex w-full h-11 bg-muted/50 p-1 rounded-xl">
+                                {['ALL', 'SNACK', 'DRINK', 'SERVICE'].map((cat) => (
+                                    <TabsTrigger 
+                                        key={cat} 
+                                        value={cat} 
+                                        className="flex-1 rounded-lg text-sm font-bold tracking-wide data-[state=active]:bg-background data-[state=active]:shadow-sm transition-all"
+                                    >
+                                        {cat === 'ALL' ? 'All Items' : cat.charAt(0) + cat.slice(1).toLowerCase() + 's'}
+                                    </TabsTrigger>
+                                ))}
                             </TabsList>
                         </Tabs>
                     </div>
 
-                    {/* Product Grid */}
-                    <ScrollArea className="flex-1 rounded-xl border bg-muted/20 p-4 shadow-inner">
-                        <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-6 2xl:grid-cols-8 gap-4">
+                    {/* Product Grid Area */}
+                    <div className="flex-1 overflow-y-auto rounded-2xl border bg-muted/20 p-5 custom-scrollbar">
+                        <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 2xl:grid-cols-6 gap-4 pb-10">
                             {filteredProducts.map(product => (
                                 <Card
                                     key={product.id}
                                     className={cn(
-                                        "cursor-pointer hover:shadow-lg hover:border-primary transition-all active:scale-95 group relative overflow-hidden border-2",
-                                        product.type !== 'SERVICE' && (product.stock || 0) <= 0 ? 'opacity-60 grayscale bg-muted/50 cursor-not-allowed' : 'bg-card'
+                                        "cursor-pointer group relative overflow-hidden border-2 rounded-xl transition-transform active:scale-95 will-change-transform",
+                                        "hover:border-primary/40 hover:-translate-y-1 hover:shadow-md",
+                                        product.type !== 'SERVICE' && (product.stock || 0) <= 0 
+                                            ? 'opacity-60 bg-muted/50 cursor-not-allowed grayscale-[0.5]' 
+                                            : 'bg-card'
                                     )}
                                     onClick={() => {
                                         if (product.type !== 'SERVICE' && (product.stock || 0) <= 0) return
                                         addToCart(product)
                                     }}
                                 >
-                                    <CardContent className="p-4 flex flex-col justify-between min-h-[160px]">
+                                    {/* Subdued Watermark Icon for performance */}
+                                    <div className="absolute -right-4 -bottom-4 opacity-5 pointer-events-none">
+                                        {product.type === 'DRINK' && <Coffee className="w-24 h-24" />}
+                                        {product.type === 'SNACK' && <Utensils className="w-24 h-24" />}
+                                        {product.type === 'SERVICE' && <Briefcase className="w-24 h-24" />}
+                                    </div>
+
+                                    <CardContent className="p-4 flex flex-col justify-between h-[140px] relative z-10">
                                         <div className="flex justify-between items-start">
-                                            <h3 className="font-bold text-sm line-clamp-2 leading-tight group-hover:text-primary transition-colors">{product.name}</h3>
-                                            {product.type === 'DRINK' && <Coffee className="h-5 w-5 text-blue-500/50" />}
-                                            {product.type === 'SNACK' && <Utensils className="h-5 w-5 text-orange-500/50" />}
-                                            {product.type === 'SERVICE' && <Briefcase className="h-5 w-5 text-purple-500/50" />}
+                                            <h3 className="font-bold text-sm leading-tight group-hover:text-primary transition-colors line-clamp-2">
+                                                {product.name}
+                                            </h3>
                                         </div>
 
-                                        <div className="space-y-1 mt-auto">
-                                            <div className="text-2xl font-black text-primary">
-                                                {product.price} <span className="text-xs font-normal text-muted-foreground uppercase tracking-widest ml-0.5">DH</span>
+                                        <div className="mt-auto space-y-1.5">
+                                            <div className="text-2xl font-black text-foreground flex items-baseline gap-1 group-hover:text-primary transition-colors">
+                                                {product.price} <span className="text-[10px] font-bold text-muted-foreground uppercase tracking-widest">DH</span>
                                             </div>
-                                            <div className={cn(
-                                                "text-xs font-medium",
-                                                product.type === 'SERVICE' ? 'text-purple-600' :
-                                                    (product.stock || 0) <= 0 ? 'text-destructive' : 'text-muted-foreground'
-                                            )}>
-                                                {product.type === 'SERVICE' ? 'Unlimited Service' : `In Stock: ${product.stock}`}
+                                            
+                                            <div className="h-5">
+                                                {product.type === 'SERVICE' || (product.stock || 0) >= 900000 ? (
+                                                    <div className="inline-flex items-center gap-1 text-primary">
+                                                        <Infinity className="h-3.5 w-3.5" />
+                                                        <span className="text-[10px] font-bold tracking-widest uppercase">Available</span>
+                                                    </div>
+                                                ) : (product.stock || 0) <= 0 ? (
+                                                    <Badge variant="destructive" className="font-bold px-2 py-0 h-5 text-[10px]">SOLD OUT</Badge>
+                                                ) : (
+                                                    <span className="text-[11px] font-bold text-muted-foreground tracking-wider">
+                                                        Stock: {product.stock}
+                                                    </span>
+                                                )}
                                             </div>
                                         </div>
 
-                                        {product.type !== 'SERVICE' && (product.stock || 0) <= 0 && (
-                                            <div className="absolute inset-0 bg-background/60 flex items-center justify-center backdrop-blur-[2px]">
-                                                <Badge variant="destructive" className="rotate-12 shadow-lg border-2 border-background font-bold px-3 py-1">SOLD OUT</Badge>
-                                            </div>
-                                        )}
-
-                                        <div className="absolute top-2 right-2 bg-primary/10 text-primary p-1 rounded-full opacity-0 group-hover:opacity-100 transition-opacity">
-                                            <Plus className="h-4 w-4" />
+                                        {/* Floating Add Button */}
+                                        <div className="absolute top-3 right-3 bg-primary text-primary-foreground p-1.5 rounded-lg opacity-0 group-hover:opacity-100 transition-opacity shadow-sm">
+                                            <Plus className="h-3.5 w-3.5" />
                                         </div>
                                     </CardContent>
                                 </Card>
                             ))}
                         </div>
-                    </ScrollArea>
+                    </div>
                 </div>
 
-                {/* Right Sidebar: Cart */}
-                <div className="w-[400px] flex flex-col border-2 rounded-2xl bg-card shadow-2xl overflow-hidden h-full">
+                {/* Clean Cart Sidebar */}
+                <div className="w-[380px] flex flex-col border rounded-2xl bg-card shadow-lg overflow-hidden h-full">
                     {/* Cart Header */}
-                    <div className="p-5 bg-muted/30 border-b space-y-4">
+                    <div className="p-5 bg-muted/10 border-b space-y-4">
                         <div className="flex items-center justify-between">
-                            <h2 className="font-black text-xl flex items-center gap-3">
-                                <ShoppingBag className="h-6 w-6 text-primary" /> Cart
+                            <h2 className="font-black text-xl flex items-center gap-2">
+                                <ShoppingBag className="h-5 w-5 text-primary" /> Cart
                             </h2>
-                            <Badge variant="default" className="rounded-full px-3">{cart.reduce((a, c) => a + c.cartQuantity, 0)} Items</Badge>
+                            <Badge variant="secondary" className="font-bold rounded-full px-3">{cart.reduce((a, c) => a + c.cartQuantity, 0)} Items</Badge>
                         </div>
 
                         <Select value={selectedClient} onValueChange={setSelectedClient}>
-                            <SelectTrigger className="w-full bg-background border-2 h-11">
+                            <SelectTrigger className="w-full bg-background border h-12 rounded-xl text-sm font-medium">
                                 <SelectValue placeholder="Select Client" />
                             </SelectTrigger>
-                            <SelectContent className="max-h-[300px]">
-                                <SelectItem value="guest">Guest (Fast Cash)</SelectItem>
+                            <SelectContent className="max-h-[300px] bg-card">
+                                <SelectItem value="guest" className="font-bold py-2.5">Guest (Fast Cash)</SelectItem>
                                 {clients.map(client => (
-                                    <SelectItem key={client.id} value={client.id}>
-                                        <div className="flex justify-between w-full gap-4">
-                                            <span>{client.name}</span>
-                                            {client.balance > 0 && <span className="text-destructive text-xs font-bold font-mono">-{client.balance} DH</span>}
+                                    <SelectItem key={client.id} value={client.id} className="py-2.5">
+                                        <div className="flex justify-between w-full gap-4 items-center">
+                                            <span className="font-medium">{client.name}</span>
+                                            {client.balance > 0 && <span className="text-destructive font-bold text-xs">-{client.balance} DH</span>}
                                         </div>
                                     </SelectItem>
                                 ))}
@@ -240,27 +262,27 @@ export const POS: React.FC = () => {
                     </div>
 
                     {/* Cart Items */}
-                    <ScrollArea className="flex-1">
-                        <div className="p-4 space-y-3">
+                    <div className="flex-1 overflow-y-auto bg-muted/5 custom-scrollbar">
+                        <div className="p-3 space-y-2">
                             {cart.length === 0 ? (
-                                <div className="flex flex-col items-center justify-center h-60 text-muted-foreground opacity-30 gap-4 mt-10">
-                                    <ShoppingCart className="h-20 w-20" />
-                                    <p className="font-bold text-lg">Your cart is empty</p>
+                                <div className="flex flex-col items-center justify-center h-[300px] text-muted-foreground/40 gap-4">
+                                    <ShoppingCart className="h-16 w-16" />
+                                    <p className="font-bold text-lg">Cart is empty</p>
                                 </div>
                             ) : (
                                 cart.map(item => (
-                                    <div key={item.id} className="flex items-center gap-4 p-3 rounded-xl border-2 border-transparent hover:border-muted hover:bg-muted/30 transition-all group">
-                                        {/* Qty Controls */}
-                                        <div className="flex flex-col items-center gap-1 bg-background border-2 rounded-xl p-1 shadow-sm">
+                                    <div key={item.id} className="flex items-center gap-3 p-3 rounded-xl border bg-card hover:border-primary/30 transition-colors group">
+                                        {/* Standard Qty Controls */}
+                                        <div className="flex flex-col items-center gap-1 bg-muted/30 rounded-lg p-1">
                                             <button
-                                                className="h-6 w-6 flex items-center justify-center hover:bg-primary hover:text-white rounded-lg transition-colors"
+                                                className="h-6 w-6 flex items-center justify-center hover:bg-primary hover:text-primary-foreground rounded-md transition-colors"
                                                 onClick={() => updateQuantity(item.id, 1)}
                                             >
                                                 <Plus className="h-3 w-3" />
                                             </button>
-                                            <span className="text-sm font-black w-6 text-center">{item.cartQuantity}</span>
+                                            <span className="text-xs font-black w-6 text-center">{item.cartQuantity}</span>
                                             <button
-                                                className="h-6 w-6 flex items-center justify-center hover:bg-destructive hover:text-white rounded-lg transition-colors"
+                                                className="h-6 w-6 flex items-center justify-center hover:bg-destructive hover:text-white rounded-md transition-colors"
                                                 onClick={() => updateQuantity(item.id, -1)}
                                             >
                                                 <Minus className="h-3 w-3" />
@@ -270,57 +292,57 @@ export const POS: React.FC = () => {
                                         {/* Item Info */}
                                         <div className="flex-1 min-w-0">
                                             <div className="font-bold text-sm truncate">{item.name}</div>
-                                            <div className="text-xs font-mono text-muted-foreground">
+                                            <div className="text-xs font-semibold text-muted-foreground mt-0.5">
                                                 {item.price.toFixed(2)} DH
                                             </div>
                                         </div>
 
                                         {/* Line Total */}
-                                        <div className="font-black text-base text-primary">
-                                            {(item.price * item.cartQuantity).toFixed(2)}
+                                        <div className="flex flex-col items-end gap-1">
+                                            <div className="font-black text-base">
+                                                {(item.price * item.cartQuantity).toFixed(2)}
+                                            </div>
+                                            <Button
+                                                variant="ghost"
+                                                size="icon"
+                                                className="h-7 w-7 text-muted-foreground hover:bg-destructive hover:text-destructive-foreground rounded-md transition-colors opacity-0 group-hover:opacity-100"
+                                                onClick={() => removeFromCart(item.id)}
+                                            >
+                                                <Trash2 className="h-3.5 w-3.5" />
+                                            </Button>
                                         </div>
-
-                                        {/* Remove */}
-                                        <Button
-                                            variant="ghost"
-                                            size="icon"
-                                            className="h-8 w-8 text-muted-foreground hover:text-destructive hover:bg-destructive/10 rounded-full opacity-0 group-hover:opacity-100 transition-opacity"
-                                            onClick={() => removeFromCart(item.id)}
-                                        >
-                                            <Trash2 className="h-4 w-4" />
-                                        </Button>
                                     </div>
                                 ))
                             )}
                         </div>
-                    </ScrollArea>
+                    </div>
 
                     {/* Checkout Footer */}
-                    <div className="p-6 bg-card border-t-2 shadow-2xl">
-                        <div className="flex justify-between items-center mb-6">
-                            <span className="text-muted-foreground font-medium">Grand Total</span>
-                            <div className="text-4xl font-black text-primary">
+                    <div className="p-5 bg-card border-t z-10 shadow-[0_-5px_15px_-3px_rgba(0,0,0,0.05)]">
+                        <div className="flex justify-between items-end mb-4">
+                            <span className="text-muted-foreground font-bold text-sm">Total Due</span>
+                            <div className="text-4xl font-black text-foreground tracking-tight">
                                 {total.toFixed(2)}
-                                <span className="text-sm font-normal text-muted-foreground ml-1">DH</span>
+                                <span className="text-base font-bold text-muted-foreground ml-1">DH</span>
                             </div>
                         </div>
 
-                        <div className="grid grid-cols-2 gap-4">
+                        <div className="grid grid-cols-2 gap-3">
                             <Button
-                                className="h-14 text-lg font-bold bg-emerald-600 hover:bg-emerald-700 shadow-xl border-b-4 border-emerald-800 active:border-b-0 active:translate-y-1 transition-all"
+                                className="h-14 text-base font-black bg-emerald-600 hover:bg-emerald-700 text-white rounded-xl shadow-sm transition-all active:scale-95"
                                 disabled={loading || cart.length === 0}
                                 onClick={() => handleCheckout(true)}
                             >
-                                {loading ? <Loader2 className="animate-spin h-5 w-5" /> : <Wallet className="mr-2 h-6 w-6" />}
+                                {loading ? <Loader2 className="animate-spin h-5 w-5" /> : <Wallet className="mr-2 h-5 w-5" />}
                                 CASH
                             </Button>
                             <Button
-                                className="h-14 text-lg font-bold shadow-xl border-b-4 border-slate-800 active:border-b-0 active:translate-y-1 transition-all"
-                                variant="destructive"
+                                className="h-14 text-base font-black rounded-xl shadow-sm transition-all active:scale-95"
+                                variant="secondary"
                                 disabled={loading || cart.length === 0 || selectedClient === 'guest'}
                                 onClick={() => handleCheckout(false)}
                             >
-                                {loading ? <Loader2 className="animate-spin h-5 w-5" /> : <CreditCard className="mr-2 h-6 w-6" />}
+                                {loading ? <Loader2 className="animate-spin h-5 w-5" /> : <CreditCard className="mr-2 h-5 w-5" />}
                                 DEBT
                             </Button>
                         </div>

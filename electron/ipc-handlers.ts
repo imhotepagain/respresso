@@ -482,6 +482,66 @@ export function setupIpcHandlers() {
         }
     })
 
+    // ==================== EXPENSES ====================
+
+    ipcMain.handle('expenses:getAll', async (_, options?: { from?: Date; to?: Date }) => {
+        try {
+            const where: any = {}
+            if (options?.from || options?.to) {
+                where.date = {}
+                if (options.from) where.date.gte = new Date(options.from)
+                if (options.to) where.date.lte = new Date(options.to)
+            }
+
+            const expenses = await db.expense.findMany({
+                where,
+                include: {
+                    user: {
+                        select: {
+                            id: true,
+                            name: true,
+                        },
+                    },
+                },
+                orderBy: { date: 'desc' },
+            })
+            return { success: true, expenses }
+        } catch (error) {
+            console.error('Get expenses error:', error)
+            return { success: false, error: 'Failed to fetch expenses' }
+        }
+    })
+
+    ipcMain.handle('expenses:create', async (_, data: any) => {
+        try {
+            const expense = await db.expense.create({
+                data,
+                include: {
+                    user: {
+                        select: {
+                            id: true,
+                            name: true,
+                        },
+                    },
+                },
+            })
+            return { success: true, expense }
+        } catch (error) {
+            console.error('Create expense error:', error)
+            return { success: false, error: 'Failed to create expense' }
+        }
+    })
+
+    ipcMain.handle('expenses:delete', async (_, id: string) => {
+        try {
+            await db.expense.delete({ where: { id } })
+            return { success: true }
+        } catch (error) {
+            console.error('Delete expense error:', error)
+            return { success: false, error: 'Failed to delete expense' }
+        }
+    })
+
     // ==================== REPORTS ====================
 
     ipcMain.handle('reports:getStats', async (_, options: { from: string | Date; to: string | Date; userId?: string }) => {
@@ -796,6 +856,23 @@ export function setupIpcHandlers() {
         }
     })
 
+    // ==================== BACKUPS ====================
+    ipcMain.handle('backups:list', async () => {
+        const { BackupService } = await import('./backup')
+        return BackupService.listBackups()
+    })
+
+    ipcMain.handle('backups:create', async () => {
+        const { BackupService } = await import('./backup')
+        return BackupService.createBackup()
+    })
+
+    ipcMain.handle('backups:export', async () => {
+        const { BackupService } = await import('./backup')
+        return BackupService.exportBackup()
+    })
+
     console.log('✅ IPC handlers registered')
 }
+
 
