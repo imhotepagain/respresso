@@ -1,6 +1,7 @@
-import { app, BrowserWindow } from 'electron'
+import { app, BrowserWindow, dialog } from 'electron'
 import { fileURLToPath } from 'node:url'
 import path from 'node:path'
+import fs from 'node:fs'
 import { initDatabase, closeDatabase } from './database'
 import { setupIpcHandlers } from './ipc-handlers'
 import { BackupService } from './backup'
@@ -69,10 +70,8 @@ app.on('activate', () => {
 
 // TOP-LEVEL EMERGENCY ERROR HANDLER
 process.on('uncaughtException', (error) => {
-  const fs = require('node:fs')
-  const path = require('node:path')
   try {
-    const logPath = path.join(require('electron').app.getPath('desktop'), 'GLISSA_CRITICAL_ERROR.txt')
+    const logPath = path.join(app.getPath('desktop'), 'GLISSA_CRITICAL_ERROR.txt')
     fs.appendFileSync(logPath, `CRITICAL CRASH (${new Date().toISOString()}): ${error.stack || error}\n`)
   } catch (e) {}
 })
@@ -90,11 +89,11 @@ if (!gotTheLock) {
   })
 
   app.whenReady().then(async () => {
-    const fs = require('node:fs')
     const logPath = path.join(app.getPath('desktop'), 'GLISSA_CRITICAL_ERROR.txt')
-    fs.appendFileSync(logPath, `App Ready - Starting Init... (${new Date().toISOString()})\n`)
-
+    
     try {
+      fs.appendFileSync(logPath, `App Ready - Starting Init... (${new Date().toISOString()})\n`)
+
       // 1. Create window immediately so we see SOMETHING
       createWindow()
       fs.appendFileSync(logPath, `Window Created\n`)
@@ -113,7 +112,10 @@ if (!gotTheLock) {
       fs.appendFileSync(logPath, `Backup Done\n`)
 
     } catch (error: any) {
-      fs.appendFileSync(logPath, `STARTUP ERROR: ${error.stack || error}\n`)
+      try {
+        fs.appendFileSync(logPath, `STARTUP ERROR: ${error.stack || error}\n`)
+      } catch (e) {}
+      
       const { dialog } = require('electron')
       dialog.showErrorBox('Critical Startup Error', error.message || 'Unknown error')
     }
