@@ -89,35 +89,31 @@ if (!gotTheLock) {
   })
 
   app.whenReady().then(async () => {
-    const logPath = path.join(app.getPath('desktop'), 'GLISSA_CRITICAL_ERROR.txt')
+    // 🚀 AUTO-LAUNCH FOR WINDOWS
+    if (!isDev) {
+      app.setLoginItemSettings({
+        openAtLogin: true,
+        path: app.getPath('exe')
+      })
+    }
+
+    const logPath = path.join(app.getPath('desktop'), 'GLISSA_WINDOWS_LOG.txt')
     
     try {
-      fs.appendFileSync(logPath, `App Ready - Starting Init... (${new Date().toISOString()})\n`)
+      fs.appendFileSync(logPath, `[WINDOWS PROD] Starting... ${new Date().toISOString()}\n`)
 
-      // 1. Create window immediately so we see SOMETHING
       createWindow()
-      fs.appendFileSync(logPath, `Window Created\n`)
-
-      // 2. Init Database
       await initDatabase()
-      fs.appendFileSync(logPath, `Database Initialized\n`)
-
-      // 3. Init Handlers
       setupIpcHandlers()
-      fs.appendFileSync(logPath, `IPC Handlers Ready\n`)
       
-      // 4. Backup
       BackupService.init()
       BackupService.createBackup()
-      fs.appendFileSync(logPath, `Backup Done\n`)
+      
+      fs.appendFileSync(logPath, `[WINDOWS PROD] System Online\n`)
 
     } catch (error: any) {
-      try {
-        fs.appendFileSync(logPath, `STARTUP ERROR: ${error.stack || error}\n`)
-      } catch (e) {}
-      
-      const { dialog } = require('electron')
-      dialog.showErrorBox('Critical Startup Error', error.message || 'Unknown error')
+      fs.appendFileSync(logPath, `FATAL ERROR: ${error.stack || error}\n`)
+      dialog.showErrorBox('EPOS System Error', `The application could not start. Please check the log on your desktop.`)
     }
   })
 }
