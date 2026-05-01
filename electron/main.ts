@@ -91,9 +91,13 @@ try {
     
     createWindow()
   })
-} catch (error) {
+} catch (error: any) {
   const fs = require('node:fs')
   const path = require('node:path')
-  const logPath = path.join(app.getPath('desktop'), 'GLISSA_CRITICAL_ERROR.txt')
-  fs.writeFileSync(logPath, `STARTUP ERROR: ${error.stack || error}\n`)
+  try {
+    const logPath = path.join(app.getPath('desktop'), 'GLISSA_CRITICAL_ERROR.txt')
+    fs.writeFileSync(logPath, `STARTUP ERROR: ${error.stack || error}\n`)
+  } catch (e) {
+    // Fallback
+  }
 }
