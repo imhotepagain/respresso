@@ -7,11 +7,6 @@ import { BackupService } from './backup'
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url))
 
-// DISABLE HARDWARE ACCELERATION FOR EPOS COMPATIBILITY
-app.disableHardwareAcceleration()
-app.commandLine.appendSwitch('disable-gpu')
-app.commandLine.appendSwitch('disable-software-rasterizer')
-
 // The built directory structure
 //
 // ├─┬─┬ dist
