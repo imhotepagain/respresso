@@ -91,6 +91,21 @@ export interface Expense {
     user: { id: string; name: string } | null
 }
 
+export interface Shift {
+    id: string
+    userId: string
+    user?: { name: string }
+    startTime: Date
+    endTime: Date | null
+    startCash: number
+    endCash: number | null
+    expectedCash: number | null
+    status: 'OPEN' | 'CLOSED'
+    notes: string | null
+    createdAt: Date
+    updatedAt: Date
+}
+
 export interface DailyStats {
     revenue: {
         total: number

@@ -1,17 +1,13 @@
 import React, { useState, useEffect } from "react"
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
+
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
 import {
     BarChart as BarChartIcon,
-    TrendingUp,
-    TrendingDown,
-    DollarSign,
-    Calendar,
     Download,
-    Package,
     Loader2,
     Activity,
-    PieChart as PieChartIcon
+    PieChart as PieChartIcon,
+    DollarSign
 } from 'lucide-react'
 import { Button } from "@/components/ui/button"
 import { useAuth } from "@/providers/AuthProvider"
@@ -19,144 +15,12 @@ import { AnalyticsCharts } from "@/components/reports/AnalyticsCharts"
 import { ActivityLog } from "@/components/reports/ActivityLog"
 import { FinancialAnalytics } from "@/components/reports/FinancialAnalytics"
 
-interface StatsType {
-    revenue: {
-        total: number;
-        cash: number;
-        debt: number;
-    };
-    expenses: {
-        total: number;
-    };
-    orders: {
-        count: number;
-        totalAmount: number;
-    };
-    sessions: {
-        count: number;
-        totalCost: number;
-        totalMinutes: number;
-    };
-    debtPayments: {
-        total: number;
-        count: number;
-    };
-    productStats: Record<string, {
-        name: string;
-        sold: number;
-        revenue: number;
-        restocked: number;
-    }>;
-}
 
-const StatCard: React.FC<{ title: string, value: string, subValue?: string, icon: any, color?: string }> = ({ title, value, subValue, icon: Icon, color = "primary" }) => (
-    <Card className="shadow-none border-2">
-        <CardHeader className="flex flex-row items-center justify-between pb-2">
-            <CardTitle className="text-xs font-black uppercase tracking-widest text-muted-foreground">{title}</CardTitle>
-            <div className={`p-2 rounded-lg bg-muted`}>
-                <Icon className={`h-4 w-4 text-${color}`} />
-            </div>
-        </CardHeader>
-        <CardContent>
-            <div className="text-2xl font-black">{value}</div>
-            {subValue && <p className="text-xs text-muted-foreground mt-1 font-medium">{subValue}</p>}
-        </CardContent>
-    </Card>
-)
 
-const SummaryTab: React.FC<{ stats: StatsType | null, subtitle: string }> = ({ stats, subtitle }) => {
-    if (!stats) return <div className="py-20 text-center"><Loader2 className="h-8 w-8 animate-spin mx-auto opacity-20" /></div>
 
-    const productRows = Object.values(stats.productStats).sort((a, b) => b.revenue - a.revenue)
-    const netCash = stats.revenue.cash - stats.expenses.total
-
-    return (
-        <div className="space-y-6">
-            <div className="flex items-center gap-2 text-primary font-bold bg-primary/5 px-4 py-2 rounded-full w-fit border border-primary/10">
-                <Calendar className="h-4 w-4" />
-                {subtitle}
-            </div>
-
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
-                <StatCard
-                    title="Total Volume"
-                    value={`${stats.revenue.total.toFixed(2)} DH`}
-                    subValue="Cash + New Debt Sales"
-                    icon={DollarSign}
-                    color="primary"
-                />
-                <StatCard
-                    title="Unpaid / New Debt"
-                    value={`${stats.revenue.debt.toFixed(2)} DH`}
-                    subValue="To be collected later"
-                    icon={TrendingUp}
-                    color="orange-600"
-                />
-                <StatCard
-                    title="Restock Expenses"
-                    value={`-${stats.expenses.total.toFixed(2)} DH`}
-                    subValue="Paid from drawer"
-                    icon={Package}
-                    color="red-600"
-                />
-                <StatCard
-                    title="Net Cash in Drawer"
-                    value={`${netCash.toFixed(2)} DH`}
-                    subValue="Cash Sales + Payments - Expenses"
-                    icon={TrendingDown}
-                    color="emerald-600"
-                />
-            </div>
-
-            <div className="bg-card rounded-2xl border-2 shadow-none overflow-hidden">
-                <div className="p-4 border-b bg-muted/30">
-                    <h2 className="font-black flex items-center gap-2 uppercase tracking-tight text-sm">
-                        <Package className="h-4 w-4" /> Item Breakdown
-                    </h2>
-                </div>
-                <div className="overflow-x-auto">
-                    <table className="w-full text-sm">
-                        <thead className="bg-muted/50 border-b">
-                            <tr>
-                                <th className="text-left p-4 font-bold">Product</th>
-                                <th className="text-right p-4 font-bold">Restocked</th>
-                                <th className="text-right p-4 font-bold">Sold</th>
-                                <th className="text-right p-4 font-bold">Revenue</th>
-                            </tr>
-                        </thead>
-                        <tbody className="divide-y">
-                            {productRows.length === 0 ? (
-                                <tr>
-                                    <td colSpan={4} className="p-8 text-center text-muted-foreground italic">No activity for this period.</td>
-                                </tr>
-                            ) : (
-                                productRows.map((row, idx) => (
-                                    <tr key={idx} className="hover:bg-muted/30 transition-colors">
-                                        <td className="p-4 font-medium">{row.name}</td>
-                                        <td className="p-4 text-right text-orange-600 font-mono">
-                                            {row.restocked > 0 ? `+${row.restocked}` : '-'}
-                                        </td>
-                                        <td className="p-4 text-right text-blue-600 font-mono">
-                                            {row.sold > 0 ? `-${row.sold}` : '-'}
-                                        </td>
-                                        <td className="p-4 text-right font-black font-mono">
-                                            {row.revenue > 0 ? `${row.revenue.toFixed(2)} DH` : '-'}
-                                        </td>
-                                    </tr>
-                                ))
-                            )}
-                        </tbody>
-                    </table>
-                </div>
-            </div>
-        </div>
-    )
-}
 
 export const Reports: React.FC = () => {
-    const { user } = useAuth()
-    const [dailyStats, setDailyStats] = useState<StatsType | null>(null)
-    const [weeklyStats, setWeeklyStats] = useState<StatsType | null>(null)
+    useAuth()
     const [analytics, setAnalytics] = useState<any>(null)
     const [loading, setLoading] = useState(true)
 
@@ -171,28 +35,12 @@ export const Reports: React.FC = () => {
             weekStart.setDate(weekStart.getDate() - day + 1)
             weekStart.setHours(0, 0, 0, 0)
 
-            const userId = user?.role === 'STAFF' ? user.id : undefined
 
-            const [dailyResult, weeklyResult, analyticsResult] = await Promise.all([
-                window.api.getStats({
-                    from: now,
-                    to: now,
-                    userId
-                }),
-                window.api.getStats({
-                    from: weekStart,
-                    to: now,
-                    userId
-                }),
+
+            const [analyticsResult] = await Promise.all([
                 window.api.getAnalytics({ days: 7 })
             ])
 
-            if (dailyResult.success && dailyResult.stats) {
-                setDailyStats(dailyResult.stats as any)
-            }
-            if (weeklyResult.success && weeklyResult.stats) {
-                setWeeklyStats(weeklyResult.stats as any)
-            }
             if (analyticsResult.success) {
                 setAnalytics(analyticsResult.data)
             }

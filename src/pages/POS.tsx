@@ -10,7 +10,6 @@ import { ShoppingCart, Trash2, CreditCard, Wallet, Plus, Minus, Search, Coffee, 
 import { useAuth } from "@/providers/AuthProvider"
 import { cn } from "@/lib/utils"
 import { Shift } from "@/types/electron"
-import { toast } from "sonner"
 import { useNavigate } from "react-router-dom"
 
 type CartItem = Product & { cartQuantity: number }

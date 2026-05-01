@@ -899,7 +899,7 @@ export function setupIpcHandlers() {
                     createdAt: { gte: shift.startTime, lte: new Date() }
                 }
             })
-            const ordersTotal = orders.reduce((sum, o) => sum + o.total, 0)
+            const ordersTotal = orders.reduce((sum: number, o: any) => sum + o.total, 0)
 
             // 2. Completed sessions
             const sessions = await db.session.findMany({
@@ -908,7 +908,7 @@ export function setupIpcHandlers() {
                     updatedAt: { gte: shift.startTime, lte: new Date() }
                 }
             })
-            const sessionsTotal = sessions.reduce((sum, s) => sum + (s.cost || 0), 0)
+            const sessionsTotal = sessions.reduce((sum: number, s: any) => sum + (s.cost || 0), 0)
 
             // 3. Debt payments
             // Note: Currently DebtPayment doesn't have a staffId, but we can filter by date
@@ -918,7 +918,7 @@ export function setupIpcHandlers() {
                     createdAt: { gte: shift.startTime, lte: new Date() }
                 }
             })
-            const debtTotal = debtPayments.reduce((sum, p) => sum + p.amount, 0)
+            const debtTotal = debtPayments.reduce((sum: number, p: any) => sum + p.amount, 0)
 
             // 4. Expenses
             const expenses = await db.expense.findMany({
@@ -927,7 +927,7 @@ export function setupIpcHandlers() {
                     date: { gte: shift.startTime, lte: new Date() }
                 }
             })
-            const expensesTotal = expenses.reduce((sum, e) => sum + e.amount, 0)
+            const expensesTotal = expenses.reduce((sum: number, e: any) => sum + e.amount, 0)
 
             const expectedCash = shift.startCash + ordersTotal + sessionsTotal + debtTotal - expensesTotal
 
@@ -993,12 +993,12 @@ export function setupIpcHandlers() {
                 db.debtPayment.findMany({ where: { createdAt: dateFilter } })
             ])
 
-            const revenueFromOrders = orders.reduce((sum, o) => sum + o.total, 0)
-            const revenueFromSessions = sessions.reduce((sum, s) => sum + (s.cost || 0), 0)
-            const revenueFromDebt = debtPayments.reduce((sum, p) => sum + p.amount, 0)
+            const revenueFromOrders = orders.reduce((sum: number, o: any) => sum + o.total, 0)
+            const revenueFromSessions = sessions.reduce((sum: number, s: any) => sum + (s.cost || 0), 0)
+            const revenueFromDebt = debtPayments.reduce((sum: number, p: any) => sum + p.amount, 0)
             const totalRevenue = revenueFromOrders + revenueFromSessions + revenueFromDebt
 
-            const totalExpenses = expenses.reduce((sum, e) => sum + e.amount, 0)
+            const totalExpenses = expenses.reduce((sum: number, e: any) => sum + e.amount, 0)
 
             // Group data for charts
             const revenueByDay: Record<string, number> = {}
@@ -1017,10 +1017,10 @@ export function setupIpcHandlers() {
                 expensesByDay[key] = 0
             }
 
-            orders.forEach(o => { const k = fmt(o.createdAt); revenueByDay[k] = (revenueByDay[k] || 0) + o.total })
-            sessions.forEach(s => { const k = fmt(s.createdAt); revenueByDay[k] = (revenueByDay[k] || 0) + (s.cost || 0) })
-            debtPayments.forEach(p => { const k = fmt(p.createdAt); revenueByDay[k] = (revenueByDay[k] || 0) + p.amount })
-            expenses.forEach(e => { const k = fmt(e.date); expensesByDay[k] = (expensesByDay[k] || 0) + e.amount })
+            orders.forEach((o: any) => { const k = fmt(o.createdAt); revenueByDay[k] = (revenueByDay[k] || 0) + o.total })
+            sessions.forEach((s: any) => { const k = fmt(s.createdAt); revenueByDay[k] = (revenueByDay[k] || 0) + (s.cost || 0) })
+            debtPayments.forEach((p: any) => { const k = fmt(p.createdAt); revenueByDay[k] = (revenueByDay[k] || 0) + p.amount })
+            expenses.forEach((e: any) => { const k = fmt(e.date); expensesByDay[k] = (expensesByDay[k] || 0) + e.amount })
 
             return {
                 success: true,

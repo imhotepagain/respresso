@@ -1,6 +1,5 @@
 import React, { useState, useEffect } from 'react'
 import {
-    Database,
     Download,
     Plus,
     History,
@@ -8,7 +7,6 @@ import {
     ShieldCheck,
     AlertCircle,
     CheckCircle2,
-    FileJson,
     Calendar
 } from 'lucide-react'
 import { Button } from '../components/ui/button'

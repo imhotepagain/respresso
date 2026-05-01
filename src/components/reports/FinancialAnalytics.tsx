@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react'
+import { useState, useEffect } from 'react'
 import {
     AreaChart,
     Area,
@@ -6,14 +6,11 @@ import {
     YAxis,
     CartesianGrid,
     Tooltip,
-    ResponsiveContainer,
-    BarChart,
-    Bar,
-    Legend
+    ResponsiveContainer
 } from 'recharts'
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "../ui/card"
 import { Tabs, TabsList, TabsTrigger } from "../ui/tabs"
-import { Loader2, TrendingUp, TrendingDown, DollarSign, Wallet } from 'lucide-react'
+import { Loader2, TrendingUp, TrendingDown, Wallet } from 'lucide-react'
 import { toast } from 'sonner'
 
 export function FinancialAnalytics() {
