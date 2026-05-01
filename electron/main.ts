@@ -72,32 +72,50 @@ process.on('uncaughtException', (error) => {
   const fs = require('node:fs')
   const path = require('node:path')
   try {
-    const logPath = path.join(app.getPath('desktop'), 'GLISSA_CRITICAL_ERROR.txt')
-    fs.writeFileSync(logPath, `CRITICAL CRASH: ${error.stack || error}\n`)
-  } catch (e) {
-    // Fallback if desktop is unreachable
-  }
+    const logPath = path.join(require('electron').app.getPath('desktop'), 'GLISSA_CRITICAL_ERROR.txt')
+    fs.appendFileSync(logPath, `CRITICAL CRASH (${new Date().toISOString()}): ${error.stack || error}\n`)
+  } catch (e) {}
 })
 
-try {
-  app.whenReady().then(() => {
-    // Initialize database and IPC handlers
-    initDatabase()
-    setupIpcHandlers()
-    
-    // Initialize Backup Service and perform initial backup
-    BackupService.init()
-    BackupService.createBackup()
-    
-    createWindow()
+// Force single instance
+const gotTheLock = app.requestSingleInstanceLock()
+if (!gotTheLock) {
+  app.quit()
+} else {
+  app.on('second-instance', () => {
+    if (win) {
+      if (win.isMinimized()) win.restore()
+      win.focus()
+    }
   })
-} catch (error: any) {
-  const fs = require('node:fs')
-  const path = require('node:path')
-  try {
+
+  app.whenReady().then(async () => {
+    const fs = require('node:fs')
     const logPath = path.join(app.getPath('desktop'), 'GLISSA_CRITICAL_ERROR.txt')
-    fs.writeFileSync(logPath, `STARTUP ERROR: ${error.stack || error}\n`)
-  } catch (e) {
-    // Fallback
-  }
+    fs.appendFileSync(logPath, `App Ready - Starting Init... (${new Date().toISOString()})\n`)
+
+    try {
+      // 1. Create window immediately so we see SOMETHING
+      createWindow()
+      fs.appendFileSync(logPath, `Window Created\n`)
+
+      // 2. Init Database
+      await initDatabase()
+      fs.appendFileSync(logPath, `Database Initialized\n`)
+
+      // 3. Init Handlers
+      setupIpcHandlers()
+      fs.appendFileSync(logPath, `IPC Handlers Ready\n`)
+      
+      // 4. Backup
+      BackupService.init()
+      BackupService.createBackup()
+      fs.appendFileSync(logPath, `Backup Done\n`)
+
+    } catch (error: any) {
+      fs.appendFileSync(logPath, `STARTUP ERROR: ${error.stack || error}\n`)
+      const { dialog } = require('electron')
+      dialog.showErrorBox('Critical Startup Error', error.message || 'Unknown error')
+    }
+  })
 }
