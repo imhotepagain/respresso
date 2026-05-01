@@ -18,6 +18,13 @@ export default defineConfig({
       main: {
         // Shortcut of `build.lib.entry`.
         entry: 'electron/main.ts',
+        vite: {
+          build: {
+            rollupOptions: {
+              external: ['electron-pos-printer', '@prisma/client']
+            }
+          }
+        }
       },
       preload: {
         // Shortcut of `build.rollupOptions.input`.

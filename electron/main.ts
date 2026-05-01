@@ -67,14 +67,33 @@ app.on('activate', () => {
   }
 })
 
-app.whenReady().then(() => {
-  // Initialize database and IPC handlers
-  initDatabase()
-  setupIpcHandlers()
-  
-  // Initialize Backup Service and perform initial backup
-  BackupService.init()
-  BackupService.createBackup()
-  
-  createWindow()
+// TOP-LEVEL EMERGENCY ERROR HANDLER
+process.on('uncaughtException', (error) => {
+  const fs = require('node:fs')
+  const path = require('node:path')
+  try {
+    const logPath = path.join(app.getPath('desktop'), 'GLISSA_CRITICAL_ERROR.txt')
+    fs.writeFileSync(logPath, `CRITICAL CRASH: ${error.stack || error}\n`)
+  } catch (e) {
+    // Fallback if desktop is unreachable
+  }
 })
+
+try {
+  app.whenReady().then(() => {
+    // Initialize database and IPC handlers
+    initDatabase()
+    setupIpcHandlers()
+    
+    // Initialize Backup Service and perform initial backup
+    BackupService.init()
+    BackupService.createBackup()
+    
+    createWindow()
+  })
+} catch (error) {
+  const fs = require('node:fs')
+  const path = require('node:path')
+  const logPath = path.join(app.getPath('desktop'), 'GLISSA_CRITICAL_ERROR.txt')
+  fs.writeFileSync(logPath, `STARTUP ERROR: ${error.stack || error}\n`)
+}

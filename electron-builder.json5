@@ -3,6 +3,10 @@
   "$schema": "https://raw.githubusercontent.com/electron-userland/electron-builder/master/packages/app-builder-lib/scheme.json",
   "appId": "com.glissa.app",
   "asar": true,
+  "asarUnpack": [
+    "**/node_modules/electron-pos-printer/**/*",
+    "**/node_modules/@prisma/client/**/*"
+  ],
   "productName": "GLISSA",
   "directories": {
     "output": "release/${version}"
