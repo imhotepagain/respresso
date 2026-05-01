@@ -16,7 +16,11 @@
     {
       "from": "node_modules/.prisma/client",
       "to": "client",
-      "filter": ["query-engine-*"]
+      "filter": ["query-engine-*", "query_engine-*", "libquery_engine-*"]
+    },
+    {
+      "from": "prisma/dev.db",
+      "to": "prisma/dev.db"
     }
   ],
   "mac": {

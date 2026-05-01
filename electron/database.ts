@@ -17,11 +17,20 @@ export function initDatabase() {
     // In production, if the database doesn't exist in userData, copy the template from the app bundle
     if (!isDev) {
         const fs = require('node:fs')
-        if (!fs.existsSync(dbPath)) {
-            const templatePath = path.join(process.resourcesPath, 'prisma', 'dev.db')
-            if (fs.existsSync(templatePath)) {
-                fs.copyFileSync(templatePath, dbPath)
+        try {
+            if (!fs.existsSync(dbPath)) {
+                // Try looking for the template in extraResources first, then asar
+                const templatePath = path.join(process.resourcesPath, 'prisma', 'dev.db')
+                const asarTemplatePath = path.join(app.getAppPath(), 'prisma', 'dev.db')
+                
+                if (fs.existsSync(templatePath)) {
+                    fs.copyFileSync(templatePath, dbPath)
+                } else if (fs.existsSync(asarTemplatePath)) {
+                    fs.copyFileSync(asarTemplatePath, dbPath)
+                }
             }
+        } catch (e) {
+            console.error('Failed to copy database template:', e)
         }
     }
 
@@ -30,13 +39,50 @@ export function initDatabase() {
     // Use require to load Prisma Client (fixes ESM issues in Electron)
     const { PrismaClient } = require('@prisma/client')
 
-    prisma = new PrismaClient({
+    const prismaConfig: any = {
         datasources: {
             db: {
                 url: process.env.DATABASE_URL,
             },
         },
-    })
+    }
+
+    // In production, tell Prisma where to find the query engine
+    if (!isDev) {
+        const engineExtension = process.platform === 'win32' ? '.dll.node' : '.dylib.node'
+        
+        // For Apple Silicon vs Intel
+        let engineName = `libquery_engine-${process.platform}`
+        if (process.platform === 'win32') {
+            engineName = `query_engine-windows`
+        } else if (process.arch === 'arm64') {
+            engineName = `libquery_engine-darwin-arm64`
+        }
+
+        const enginePath = path.join(
+            process.resourcesPath,
+            'client',
+            `${engineName}${engineExtension}`
+        )
+        
+        prismaConfig.__internal = {
+            engine: {
+                binaryPath: enginePath
+            }
+        }
+    }
+
+    try {
+        prisma = new PrismaClient(prismaConfig)
+    } catch (e) {
+        console.error('Prisma initialization failed:', e)
+        // Log to file for debugging in production
+        if (!isDev) {
+            const fs = require('node:fs')
+            const logPath = path.join(app.getPath('userData'), 'error-log.txt')
+            fs.appendFileSync(logPath, `${new Date().toISOString()} - Prisma Init Error: ${e}\n`)
+        }
+    }
 
     return prisma
 }
