@@ -1,7 +1,8 @@
 import { ipcMain, BrowserWindow } from 'electron'
 import { getDatabase } from './database'
 import bcrypt from 'bcryptjs'
-import { PosPrinter } from 'electron-pos-printer'
+import pkg from 'electron-pos-printer'
+const { PosPrinter } = pkg
 
 export function setupIpcHandlers() {
     const db = getDatabase()
