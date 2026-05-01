@@ -254,6 +254,18 @@ export interface ElectronAPI {
     listBackups: () => Promise<Array<{ name: string; path: string; createdAt: Date; size: number }>>
     createBackup: () => Promise<{ success: boolean; path?: string; name?: string; error?: string }>
     exportBackup: () => Promise<{ success: boolean; path?: string; error?: string }>
+
+    // Printing
+    getPrinters: () => Promise<any[]>
+    printReceipt: (data: {
+        shopName?: string
+        address?: string
+        phone?: string
+        order?: Order
+        session?: Session
+        footer?: string
+        printerName?: string
+    }) => Promise<{ success: boolean; error?: string }>
 }
 
 

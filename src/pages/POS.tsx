@@ -101,7 +101,17 @@ export const POS: React.FC = () => {
             items
         })
 
-        if (result.success) {
+        if (result.success && result.order) {
+            // Print receipt
+            const printerName = localStorage.getItem('thermal-printer') || ''
+            if (printerName) {
+                await window.api.printReceipt({
+                    shopName: 'GLISSA POS',
+                    order: result.order,
+                    printerName
+                })
+            }
+
             setCart([])
             if (isPaid) setSelectedClient("guest")
             setOrderSuccess(true)

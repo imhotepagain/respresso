@@ -1,6 +1,7 @@
-import { ipcMain } from 'electron'
+import { ipcMain, BrowserWindow } from 'electron'
 import { getDatabase } from './database'
 import bcrypt from 'bcryptjs'
+import { PosPrinter } from 'electron-pos-printer'
 
 export function setupIpcHandlers() {
     const db = getDatabase()
@@ -1055,6 +1056,145 @@ export function setupIpcHandlers() {
     ipcMain.handle('backups:export', async () => {
         const { BackupService } = await import('./backup')
         return BackupService.exportBackup()
+    })
+
+    // ==================== PRINTING ====================
+    ipcMain.handle('printers:get-list', async () => {
+        try {
+            const win = BrowserWindow.getFocusedWindow()
+            if (!win) return []
+            return await win.webContents.getPrintersAsync()
+        } catch (error) {
+            console.error('Get printers error:', error)
+            return []
+        }
+    })
+
+    ipcMain.handle('printer:print-receipt', async (_, data: {
+        shopName?: string
+        address?: string
+        phone?: string
+        order?: any
+        session?: any
+        footer?: string
+        printerName?: string
+    }) => {
+        try {
+            const receiptData: any[] = []
+
+            // Header
+            receiptData.push({
+                type: 'text',
+                value: data.shopName || 'GLISSA POS',
+                style: { fontWeight: "700", textAlign: 'center', fontSize: "20px" }
+            })
+
+            if (data.address) {
+                receiptData.push({
+                    type: 'text',
+                    value: data.address,
+                    style: { textAlign: 'center', fontSize: "12px" }
+                })
+            }
+
+            receiptData.push({
+                type: 'text',
+                value: '--------------------------------',
+                style: { textAlign: 'center' }
+            })
+
+            // Order/Session Info
+            const now = new Date().toLocaleString()
+            receiptData.push({
+                type: 'text',
+                value: `Date: ${now}`,
+                style: { fontSize: "12px" }
+            })
+
+            if (data.order) {
+                receiptData.push({
+                    type: 'text',
+                    value: `Order ID: ${data.order.id.slice(-6).toUpperCase()}`,
+                    style: { fontSize: "12px" }
+                })
+                receiptData.push({
+                    type: 'text',
+                    value: 'Items:',
+                    style: { fontWeight: "700", marginTop: "10px" }
+                })
+
+                data.order.items.forEach((item: any) => {
+                    receiptData.push({
+                        type: 'text',
+                        value: `${item.product.name} x${item.quantity}`,
+                        style: { fontSize: "12px" }
+                    })
+                    receiptData.push({
+                        type: 'text',
+                        value: `   ${(item.price * item.quantity).toFixed(2)} DH`,
+                        style: { textAlign: 'right', fontSize: "12px" }
+                    })
+                })
+
+                receiptData.push({
+                    type: 'text',
+                    value: '--------------------------------',
+                    style: { textAlign: 'center' }
+                })
+
+                receiptData.push({
+                    type: 'text',
+                    value: `TOTAL: ${data.order.total.toFixed(2)} DH`,
+                    style: { fontWeight: "700", textAlign: 'right', fontSize: "16px" }
+                })
+            }
+
+            if (data.session) {
+                receiptData.push({
+                    type: 'text',
+                    value: `Post: PS ${data.session.postNumber || '?' }`,
+                    style: { fontSize: "14px", fontWeight: "700" }
+                })
+                receiptData.push({
+                    type: 'text',
+                    value: `Duration: ${data.session.duration || 0} min`,
+                    style: { fontSize: "12px" }
+                })
+                receiptData.push({
+                    type: 'text',
+                    value: `Cost: ${data.session.cost?.toFixed(2) || '0.00'} DH`,
+                    style: { fontWeight: "700", fontSize: "14px" }
+                })
+            }
+
+            receiptData.push({
+                type: 'text',
+                value: '--------------------------------',
+                style: { textAlign: 'center', marginTop: "10px" }
+            })
+
+            receiptData.push({
+                type: 'text',
+                value: data.footer || 'Thank you for your visit!',
+                style: { textAlign: 'center', fontSize: "10px", fontStyle: 'italic' }
+            })
+
+            const options = {
+                preview: false,
+                width: '300px',
+                margin: '0 0 0 0',
+                copies: 1,
+                printerName: data.printerName || '',
+                timeOutPerLine: 400,
+                silent: true
+            }
+
+            await PosPrinter.print(receiptData, options)
+            return { success: true }
+        } catch (error) {
+            console.error('Print receipt error:', error)
+            return { success: false, error: 'Printing failed' }
+        }
     })
 
     console.log('✅ IPC handlers registered')

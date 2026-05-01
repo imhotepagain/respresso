@@ -128,7 +128,18 @@ const TimerCard: React.FC<{
             duration,
             cost
         })
-        if (result.success) {
+        
+        if (result.success && result.session) {
+            // Print receipt
+            const printerName = localStorage.getItem('thermal-printer') || ''
+            if (printerName) {
+                await window.api.printReceipt({
+                    shopName: 'GLISSA POS',
+                    session: result.session,
+                    printerName
+                })
+            }
+
             setIsEndOpen(false)
             onComplete()
         } else {

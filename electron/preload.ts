@@ -65,6 +65,10 @@ const api: ElectronAPI = {
   listBackups: () => ipcRenderer.invoke('backups:list'),
   createBackup: () => ipcRenderer.invoke('backups:create'),
   exportBackup: () => ipcRenderer.invoke('backups:export'),
+
+  // Printing
+  getPrinters: () => ipcRenderer.invoke('printers:get-list'),
+  printReceipt: (data) => ipcRenderer.invoke('printer:print-receipt', data),
 }
 
 
