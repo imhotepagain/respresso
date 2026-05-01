@@ -7,8 +7,8 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@
 import { useAuth } from '@/providers/AuthProvider'
 import { Shift } from '@/types/electron'
 import { format } from 'date-fns'
-import { 
-    Loader2, Play, Square, History, 
+import {
+    Loader2, Play, Square, History,
     Wallet, TrendingUp, AlertCircle, CheckCircle2,
     Clock, User, Notebook
 } from 'lucide-react'
@@ -21,7 +21,7 @@ export function Shifts() {
     const [shifts, setShifts] = useState<Shift[]>([])
     const [currentShift, setCurrentShift] = useState<Shift | null>(null)
     const [isLoading, setIsLoading] = useState(true)
-    
+
     // Dialog States
     const [isStartDialogOpen, setIsStartDialogOpen] = useState(false)
     const [isEndDialogOpen, setIsEndDialogOpen] = useState(false)
@@ -42,7 +42,7 @@ export function Shifts() {
                 window.api.getCurrentShift(user.id),
                 window.api.getAllShifts()
             ])
-            
+
             if (currentRes.success) setCurrentShift(currentRes.shift || null)
             if (allRes.success && allRes.shifts) setShifts(allRes.shifts)
         } catch (error) {
@@ -125,8 +125,8 @@ export function Shifts() {
                     </p>
                 </div>
                 {!currentShift ? (
-                    <Button 
-                        size="lg" 
+                    <Button
+                        size="lg"
                         onClick={() => setIsStartDialogOpen(true)}
                         className="font-black h-14 px-8 rounded-2xl shadow-lg shadow-primary/20 active:scale-95 transition-all"
                     >
@@ -134,8 +134,8 @@ export function Shifts() {
                         START NEW SHIFT
                     </Button>
                 ) : (
-                    <Button 
-                        size="lg" 
+                    <Button
+                        size="lg"
                         variant="destructive"
                         onClick={() => setIsEndDialogOpen(true)}
                         className="font-black h-14 px-8 rounded-2xl shadow-lg shadow-destructive/20 active:scale-95 transition-all"
@@ -195,7 +195,7 @@ export function Shifts() {
                     <History className="w-5 h-5 text-muted-foreground" />
                     <h2 className="text-xl font-black uppercase tracking-widest">Shift Logs</h2>
                 </div>
-                
+
                 <Card className="border-2 shadow-xl overflow-hidden">
                     <Table>
                         <TableHeader className="bg-muted/50">
@@ -300,7 +300,7 @@ export function Shifts() {
                         </div>
                     </div>
                     <DialogFooter>
-                        <Button 
+                        <Button
                             className="w-full h-14 font-black rounded-2xl text-lg"
                             onClick={handleStartShift}
                             disabled={isSubmitting}
@@ -346,7 +346,7 @@ export function Shifts() {
                         </div>
                     </div>
                     <DialogFooter>
-                        <Button 
+                        <Button
                             variant="destructive"
                             className="w-full h-14 font-black rounded-2xl text-lg"
                             onClick={handleEndShift}

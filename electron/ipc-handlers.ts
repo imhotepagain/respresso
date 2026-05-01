@@ -979,7 +979,7 @@ export function setupIpcHandlers() {
         try {
             const now = new Date()
             let startDate = new Date()
-            
+
             if (period === 'daily') startDate.setHours(0, 0, 0, 0)
             else if (period === 'weekly') startDate.setDate(now.getDate() - 7)
             else if (period === 'monthly') startDate.setDate(now.getDate() - 30)
@@ -997,9 +997,9 @@ export function setupIpcHandlers() {
             const revenueFromSessions = sessions.reduce((sum, s) => sum + (s.cost || 0), 0)
             const revenueFromDebt = debtPayments.reduce((sum, p) => sum + p.amount, 0)
             const totalRevenue = revenueFromOrders + revenueFromSessions + revenueFromDebt
-            
+
             const totalExpenses = expenses.reduce((sum, e) => sum + e.amount, 0)
-            
+
             // Group data for charts
             const revenueByDay: Record<string, number> = {}
             const expensesByDay: Record<string, number> = {}

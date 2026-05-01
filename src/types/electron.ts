@@ -182,7 +182,7 @@ export interface ElectronAPI {
     getExpenses: (options?: { from?: Date; to?: Date }) => Promise<{ success: boolean; expenses?: Expense[]; error?: string }>
     createExpense: (data: { amount: number; category: string; description?: string; date?: Date; userId?: string }) => Promise<{ success: boolean; expense?: Expense; error?: string }>
     deleteExpense: (id: string) => Promise<{ success: boolean; error?: string }>;
-    
+
     // Shifts
     startShift: (data: { userId: string; startCash: number; notes?: string }) => Promise<{ success: boolean; shift?: Shift; error?: string }>;
     endShift: (data: { id: string; endCash: number; notes?: string }) => Promise<{ success: boolean; shift?: Shift; error?: string }>;
@@ -190,8 +190,8 @@ export interface ElectronAPI {
     getAllShifts: () => Promise<{ success: boolean; shifts?: Shift[]; error?: string }>;
 
     // Analytics
-    getFinancialStats: (period: 'daily' | 'weekly' | 'monthly') => Promise<{ 
-        success: boolean; 
+    getFinancialStats: (period: 'daily' | 'weekly' | 'monthly') => Promise<{
+        success: boolean;
         stats?: {
             revenue: number;
             expenses: number;
@@ -201,7 +201,7 @@ export interface ElectronAPI {
             topProducts: { name: string; count: number; revenue: number }[];
             revenueByDay: { date: string; amount: number }[];
             expensesByDay: { date: string; amount: number }[];
-        }; 
+        };
         error?: string;
     }>;
 

@@ -7,9 +7,9 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@
 import { useAuth } from '@/providers/AuthProvider'
 import { Expense } from '@/types/electron'
 import { format } from 'date-fns'
-import { 
-    Loader2, Plus, Receipt, Trash2, TrendingDown, 
-    Zap, Wifi, Home, ShoppingBag, Wrench, 
+import {
+    Loader2, Plus, Receipt, Trash2, TrendingDown,
+    Zap, Wifi, Home, ShoppingBag, Wrench,
     Megaphone, Users, MoreHorizontal, Calendar,
     ChevronRight, ArrowDownRight, Sparkles
 } from 'lucide-react'
@@ -57,7 +57,7 @@ export function Billing() {
 
     const handleSubmit = async (e: React.FormEvent) => {
         e.preventDefault()
-        
+
         if (!amount || isNaN(Number(amount)) || Number(amount) <= 0) {
             toast.error("Please enter a valid amount")
             return
@@ -204,8 +204,8 @@ export function Billing() {
                                                 onClick={() => setCategory(cat.name)}
                                                 className={cn(
                                                     "flex flex-col items-center justify-center p-4 rounded-2xl border-2 transition-all gap-2 group/btn",
-                                                    category === cat.name 
-                                                        ? "border-primary bg-primary/5 ring-4 ring-primary/5" 
+                                                    category === cat.name
+                                                        ? "border-primary bg-primary/5 ring-4 ring-primary/5"
                                                         : "border-border bg-card hover:border-primary/40"
                                                 )}
                                             >
@@ -227,9 +227,9 @@ export function Billing() {
                                     />
                                 </div>
 
-                                <Button 
-                                    type="submit" 
-                                    className="w-full font-black h-16 text-lg rounded-2xl shadow-lg transition-transform active:scale-95 shadow-primary/20" 
+                                <Button
+                                    type="submit"
+                                    className="w-full font-black h-16 text-lg rounded-2xl shadow-lg transition-transform active:scale-95 shadow-primary/20"
                                     disabled={isSubmitting}
                                 >
                                     {isSubmitting ? <Loader2 className="mr-2 h-6 w-6 animate-spin" /> : <Sparkles className="mr-2 h-5 w-5" />}

@@ -1,6 +1,6 @@
-# Respresso Platform Features
+# GLISSA Platform Features
 
-This document outlines all the core features currently implemented in the Respresso application. These can serve as a reference for your new tablet-based standby platform.
+This document outlines all the core features currently implemented in the GLISSA application.
 
 ## 1. Gaming / PlayStation Tracker (Sessions)
 - **Station Management Tracker**: Manage up to 6 distinct gaming stations (PlayStation posts).

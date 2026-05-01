@@ -1,6 +1,6 @@
-# Respresso
+# GLISSA
 
-Respresso is a modern application built with Vue 3, TypeScript, and Vite.
+GLISSA is a modern application built with React, TypeScript, and Vite.
 
 ## Migration Notice
 

@@ -39,13 +39,13 @@ export const POS: React.FC = () => {
         if (userResult.success && userResult.users) {
             setClients(userResult.users.filter(u => u.role === 'CLIENT'))
         }
-        
+
         // Fetch current shift
         if (currentUser?.id) {
             const shiftRes = await window.api.getCurrentShift(currentUser.id)
             if (shiftRes.success) setCurrentShift(shiftRes.shift || null)
         }
-        
+
         setFetching(false)
     }
 
@@ -140,8 +140,8 @@ export const POS: React.FC = () => {
                         <h2 className="text-3xl font-black tracking-tight">Register is Closed</h2>
                         <p className="text-muted-foreground font-medium">You must open your cash register and log your starting balance before making sales.</p>
                     </div>
-                    <Button 
-                        size="lg" 
+                    <Button
+                        size="lg"
                         className="w-full h-16 rounded-2xl font-black text-xl shadow-xl shadow-primary/20 active:scale-95 transition-all"
                         onClick={() => navigate('/shifts')}
                     >
@@ -191,9 +191,9 @@ export const POS: React.FC = () => {
                         <Tabs value={activeCategory} onValueChange={setActiveCategory} className="flex-1 w-full overflow-x-auto hide-scrollbar">
                             <TabsList className="flex w-full h-11 bg-muted/50 p-1 rounded-xl">
                                 {['ALL', 'SNACK', 'DRINK', 'SERVICE'].map((cat) => (
-                                    <TabsTrigger 
-                                        key={cat} 
-                                        value={cat} 
+                                    <TabsTrigger
+                                        key={cat}
+                                        value={cat}
                                         className="flex-1 rounded-lg text-sm font-bold tracking-wide data-[state=active]:bg-background data-[state=active]:shadow-sm transition-all"
                                     >
                                         {cat === 'ALL' ? 'All Items' : cat.charAt(0) + cat.slice(1).toLowerCase() + 's'}
@@ -212,8 +212,8 @@ export const POS: React.FC = () => {
                                     className={cn(
                                         "cursor-pointer group relative overflow-hidden border-2 rounded-xl transition-transform active:scale-95 will-change-transform",
                                         "hover:border-primary/40 hover:-translate-y-1 hover:shadow-md",
-                                        product.type !== 'SERVICE' && (product.stock || 0) <= 0 
-                                            ? 'opacity-60 bg-muted/50 cursor-not-allowed grayscale-[0.5]' 
+                                        product.type !== 'SERVICE' && (product.stock || 0) <= 0
+                                            ? 'opacity-60 bg-muted/50 cursor-not-allowed grayscale-[0.5]'
                                             : 'bg-card'
                                     )}
                                     onClick={() => {
@@ -239,7 +239,7 @@ export const POS: React.FC = () => {
                                             <div className="text-2xl font-black text-foreground flex items-baseline gap-1 group-hover:text-primary transition-colors">
                                                 {product.price} <span className="text-[10px] font-bold text-muted-foreground uppercase tracking-widest">DH</span>
                                             </div>
-                                            
+
                                             <div className="h-5">
                                                 {product.type === 'SERVICE' || (product.stock || 0) >= 900000 ? (
                                                     <div className="inline-flex items-center gap-1 text-primary">

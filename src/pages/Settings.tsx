@@ -1,11 +1,11 @@
 import React, { useState, useEffect } from 'react'
-import { 
-    Database, 
-    Download, 
-    Plus, 
-    History, 
-    HardDrive, 
-    ShieldCheck, 
+import {
+    Database,
+    Download,
+    Plus,
+    History,
+    HardDrive,
+    ShieldCheck,
     AlertCircle,
     CheckCircle2,
     FileJson,
@@ -13,13 +13,13 @@ import {
 } from 'lucide-react'
 import { Button } from '../components/ui/button'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '../components/ui/card'
-import { 
-    Table, 
-    TableBody, 
-    TableCell, 
-    TableHead, 
-    TableHeader, 
-    TableRow 
+import {
+    Table,
+    TableBody,
+    TableCell,
+    TableHead,
+    TableHeader,
+    TableRow
 } from '../components/ui/table'
 import { Badge } from '../components/ui/badge'
 import { format } from 'date-fns'
@@ -100,14 +100,13 @@ export const Settings: React.FC = () => {
             </div>
 
             {message && (
-                <div className={`p-4 rounded-lg flex items-center gap-3 ${
-                    message.type === 'success' ? 'bg-green-500/10 text-green-500 border border-green-500/20' : 'bg-destructive/10 text-destructive border border-destructive/20'
-                }`}>
+                <div className={`p-4 rounded-lg flex items-center gap-3 ${message.type === 'success' ? 'bg-green-500/10 text-green-500 border border-green-500/20' : 'bg-destructive/10 text-destructive border border-destructive/20'
+                    }`}>
                     {message.type === 'success' ? <CheckCircle2 className="h-5 w-5" /> : <AlertCircle className="h-5 w-5" />}
                     <span className="text-sm font-medium">{message.text}</span>
-                    <Button 
-                        variant="ghost" 
-                        size="sm" 
+                    <Button
+                        variant="ghost"
+                        size="sm"
                         className="ml-auto h-8 px-2"
                         onClick={() => setMessage(null)}
                     >
@@ -138,17 +137,17 @@ export const Settings: React.FC = () => {
                             </p>
                         </div>
                         <div className="pt-4 border-t space-y-3">
-                            <Button 
-                                onClick={handleCreateBackup} 
+                            <Button
+                                onClick={handleCreateBackup}
                                 disabled={isLoading}
                                 className="w-full justify-start"
                             >
                                 <Plus className="mr-2 h-4 w-4" />
                                 Create Manual Backup
                             </Button>
-                            <Button 
-                                variant="outline" 
-                                onClick={handleExportBackup} 
+                            <Button
+                                variant="outline"
+                                onClick={handleExportBackup}
                                 disabled={isLoading}
                                 className="w-full justify-start"
                             >
