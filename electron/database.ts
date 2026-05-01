@@ -81,6 +81,10 @@ export function initDatabase() {
             const fs = require('node:fs')
             const logPath = path.join(app.getPath('userData'), 'error-log.txt')
             fs.appendFileSync(logPath, `${new Date().toISOString()} - Prisma Init Error: ${e}\n`)
+            
+            // SHOW VISUAL ERROR ON WINDOWS
+            const { dialog } = require('electron')
+            dialog.showErrorBox('Database Error', `Failed to start database: ${e}. Please ensure Visual C++ Redistributable is installed.`)
         }
     }
 
