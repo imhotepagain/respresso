@@ -7,7 +7,7 @@
     "**/node_modules/electron-pos-printer/**/*",
     "**/node_modules/@prisma/client/**/*"
   ],
-  "productName": "GLISSA-EPOS",
+  "productName": "GLISSA",
   "directories": {
     "output": "release/${version}"
   },

@@ -30,10 +30,20 @@ let win: BrowserWindow | null
 
 function createWindow() {
   win = new BrowserWindow({
+    width: 1200,
+    height: 800,
+    show: false, // Don't show the window until it's ready
+    backgroundColor: '#0a0a0a', // Match the app's premium dark theme
     icon: path.join(process.env.VITE_PUBLIC, 'icon.png'),
     webPreferences: {
       preload: path.join(__dirname, 'preload.mjs'),
     },
+  })
+
+  // Show window only when content is ready to be painted
+  win.once('ready-to-show', () => {
+    win?.show()
+    win?.focus()
   })
 
   // Test active push message to Renderer-process.
@@ -68,14 +78,6 @@ app.on('activate', () => {
   }
 })
 
-// TOP-LEVEL EMERGENCY ERROR HANDLER
-process.on('uncaughtException', (error) => {
-  try {
-    const logPath = path.join(app.getPath('desktop'), 'GLISSA_CRITICAL_ERROR.txt')
-    fs.appendFileSync(logPath, `CRITICAL CRASH (${new Date().toISOString()}): ${error.stack || error}\n`)
-  } catch (e) {}
-})
-
 // Force single instance
 const gotTheLock = app.requestSingleInstanceLock()
 if (!gotTheLock) {
@@ -89,31 +91,24 @@ if (!gotTheLock) {
   })
 
   app.whenReady().then(async () => {
-    // 🚀 AUTO-LAUNCH FOR WINDOWS
-    if (!isDev) {
-      app.setLoginItemSettings({
-        openAtLogin: true,
-        path: app.getPath('exe')
-      })
-    }
-
-    const logPath = path.join(app.getPath('desktop'), 'GLISSA_WINDOWS_LOG.txt')
-    
     try {
-      fs.appendFileSync(logPath, `[WINDOWS PROD] Starting... ${new Date().toISOString()}\n`)
-
-      createWindow()
+      // 1. Init Database first (essential)
       await initDatabase()
+
+      // 2. Init Handlers
       setupIpcHandlers()
-      
+
+      // 3. Backup
       BackupService.init()
       BackupService.createBackup()
-      
-      fs.appendFileSync(logPath, `[WINDOWS PROD] System Online\n`)
+
+      // 4. Create window after initialization is ready
+      createWindow()
 
     } catch (error: any) {
-      fs.appendFileSync(logPath, `FATAL ERROR: ${error.stack || error}\n`)
-      dialog.showErrorBox('EPOS System Error', `The application could not start. Please check the log on your desktop.`)
+      console.error('Startup Error:', error)
+      const { dialog } = require('electron')
+      dialog.showErrorBox('Critical Startup Error', error.message || 'Unknown error')
     }
   })
 }
