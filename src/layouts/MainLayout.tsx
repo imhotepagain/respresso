@@ -28,6 +28,7 @@ import {
     Clock
 } from 'lucide-react'
 import { useTheme } from '../providers/ThemeProvider'
+import { GlobalSessionMonitor } from '../components/GlobalSessionMonitor'
 
 export const MainLayout: React.FC<{ children: React.ReactNode }> = ({ children }) => {
     const { user, logout } = useAuth()
@@ -82,6 +83,7 @@ export const MainLayout: React.FC<{ children: React.ReactNode }> = ({ children }
 
     return (
         <div className="flex h-screen bg-background overflow-hidden">
+            <GlobalSessionMonitor />
             <TooltipProvider>
                 <nav
                     className={cn(
