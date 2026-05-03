@@ -6,11 +6,17 @@ import {
     YAxis,
     CartesianGrid,
     Tooltip,
-    ResponsiveContainer
+    ResponsiveContainer,
+    PieChart,
+    Pie,
+    Cell,
+    Legend,
+    BarChart,
+    Bar
 } from 'recharts'
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "../ui/card"
 
-import { Loader2, TrendingUp, TrendingDown, Wallet, ShoppingBag, Gamepad2, ArrowUpRight, ArrowDownRight } from 'lucide-react'
+import { Loader2, TrendingUp, TrendingDown, Wallet, ShoppingBag, Gamepad2, ArrowUpRight, ArrowDownRight, PieChart as PieChartIcon, BarChart as BarChartIcon } from 'lucide-react'
 import { toast } from 'sonner'
 import { cn } from '@/lib/utils'
 
@@ -232,6 +238,83 @@ export function FinancialAnalytics({ from, to }: FinancialAnalyticsProps) {
                     </ResponsiveContainer>
                 </CardContent>
             </Card>
+
+            {/* Product Comparison Charts */}
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                <Card className="border-2 shadow-sm overflow-hidden rounded-2xl">
+                    <CardHeader className="bg-muted/10 border-b px-6 py-4">
+                        <CardTitle className="text-sm font-black uppercase tracking-widest text-primary flex items-center gap-2">
+                            <PieChartIcon className="h-4 w-4" /> Revenue Distribution
+                        </CardTitle>
+                    </CardHeader>
+                    <CardContent className="h-[300px] p-6">
+                        <ResponsiveContainer width="100%" height="100%">
+                            <PieChart>
+                                <Pie 
+                                    data={stats?.productComparison || []} 
+                                    dataKey="value" 
+                                    nameKey="name" 
+                                    cx="50%" 
+                                    cy="50%" 
+                                    innerRadius={70} 
+                                    outerRadius={100} 
+                                    paddingAngle={5}
+                                >
+                                    {(stats?.productComparison || []).map((entry: any, index: number) => (
+                                        <Cell key={`cell-${index}`} fill={entry.fill} />
+                                    ))}
+                                </Pie>
+                                <Tooltip 
+                                    contentStyle={{
+                                        backgroundColor: 'hsl(var(--card))',
+                                        borderColor: 'hsl(var(--border))',
+                                        borderRadius: '12px',
+                                        fontSize: '12px',
+                                        fontWeight: 'bold',
+                                        boxShadow: '0 10px 25px -5px rgb(0 0 0 / 0.2)'
+                                    }}
+                                    formatter={(value: any) => [`${Number(value).toFixed(2)} DH`, 'Revenue']}
+                                />
+                                <Legend verticalAlign="bottom" height={36} iconType="circle" wrapperStyle={{ fontSize: '12px', fontWeight: 'bold' }} />
+                            </PieChart>
+                        </ResponsiveContainer>
+                    </CardContent>
+                </Card>
+
+                <Card className="border-2 shadow-sm overflow-hidden rounded-2xl">
+                    <CardHeader className="bg-muted/10 border-b px-6 py-4">
+                        <CardTitle className="text-sm font-black uppercase tracking-widest text-primary flex items-center gap-2">
+                            <BarChartIcon className="h-4 w-4" /> Category Comparison
+                        </CardTitle>
+                    </CardHeader>
+                    <CardContent className="h-[300px] p-6">
+                        <ResponsiveContainer width="100%" height="100%">
+                            <BarChart data={stats?.productComparison || []} margin={{ top: 10, right: 10, left: -20, bottom: 0 }}>
+                                <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="hsl(var(--border))" opacity={0.4} />
+                                <XAxis dataKey="name" tick={{ fontSize: 10, fontWeight: 700, fill: '#94a3b8' }} axisLine={false} tickLine={false} dy={8} />
+                                <YAxis tick={{ fontSize: 10, fontWeight: 700, fill: '#94a3b8' }} axisLine={false} tickLine={false} tickFormatter={(value) => `${value}`} />
+                                <Tooltip 
+                                    cursor={{ fill: 'hsl(var(--muted))', opacity: 0.2 }}
+                                    contentStyle={{
+                                        backgroundColor: 'hsl(var(--card))',
+                                        borderColor: 'hsl(var(--border))',
+                                        borderRadius: '12px',
+                                        fontSize: '12px',
+                                        fontWeight: 'bold',
+                                        boxShadow: '0 10px 25px -5px rgb(0 0 0 / 0.2)'
+                                    }}
+                                    formatter={(value: any) => [`${Number(value).toFixed(2)} DH`, 'Revenue']}
+                                />
+                                <Bar dataKey="value" radius={[4, 4, 0, 0]}>
+                                    {(stats?.productComparison || []).map((entry: any, index: number) => (
+                                        <Cell key={`cell-${index}`} fill={entry.fill} />
+                                    ))}
+                                </Bar>
+                            </BarChart>
+                        </ResponsiveContainer>
+                    </CardContent>
+                </Card>
+            </div>
 
             {/* P&L Statement */}
             <Card className="border-2 shadow-sm rounded-2xl overflow-hidden">

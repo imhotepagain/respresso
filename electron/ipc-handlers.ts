@@ -1055,7 +1055,10 @@ export function setupIpcHandlers() {
 
             // Current period data
             const [orders, sessions, expenses, debtPayments] = await Promise.all([
-                db.order.findMany({ where: { createdAt: dateFilter, isPaid: true } }),
+                db.order.findMany({ 
+                    where: { createdAt: dateFilter, isPaid: true },
+                    include: { items: { include: { product: true } } }
+                }),
                 db.session.findMany({ where: { createdAt: dateFilter, status: 'COMPLETED' } }),
                 db.expense.findMany({ where: { date: dateFilter } }),
                 db.debtPayment.findMany({ where: { createdAt: dateFilter } })
@@ -1115,6 +1118,29 @@ export function setupIpcHandlers() {
                 expensesByCategory[cat] = (expensesByCategory[cat] || 0) + e.amount
             })
 
+            // Product Sales Breakdown
+            let snackRevenue = 0;
+            let drinkRevenue = 0;
+            let serviceRevenue = revenueFromSessions; // include session time
+
+            orders.forEach((o: any) => {
+                if (o.items) {
+                    o.items.forEach((item: any) => {
+                        const type = item.product?.type;
+                        const amount = item.price * item.quantity;
+                        if (type === 'SNACK') snackRevenue += amount;
+                        else if (type === 'DRINK') drinkRevenue += amount;
+                        else if (type === 'SERVICE') serviceRevenue += amount;
+                    });
+                }
+            });
+
+            const productComparison = [
+                { name: 'Snacks', value: snackRevenue, fill: '#f59e0b' },
+                { name: 'Drinks', value: drinkRevenue, fill: '#3b82f6' },
+                { name: 'Services', value: serviceRevenue, fill: '#8b5cf6' }
+            ];
+
             return {
                 success: true,
                 stats: {
@@ -1129,6 +1155,7 @@ export function setupIpcHandlers() {
                     revenueByDay: Object.entries(revenueByDay).map(([date, amount]) => ({ date, amount })),
                     expensesByDay: Object.entries(expensesByDay).map(([date, amount]) => ({ date, amount })),
                     expensesByCategory: Object.entries(expensesByCategory).map(([category, amount]) => ({ category, amount })),
+                    productComparison,
                     deltas: {
                         revenue: calcDelta(totalRevenue, prevTotalRevenue),
                         expenses: calcDelta(totalExpenses, prevTotalExpenses),
