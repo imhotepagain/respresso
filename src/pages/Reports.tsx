@@ -9,6 +9,7 @@ import {
     Activity,
     CalendarDays,
     ArrowRight,
+    ArrowLeft,
 } from 'lucide-react'
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
@@ -18,6 +19,7 @@ import { FinancialAnalytics } from "@/components/reports/FinancialAnalytics"
 import { ActivityLog } from "@/components/reports/ActivityLog"
 import { StaffPerformance } from "@/components/reports/StaffPerformance"
 import { DailySnapshots } from "@/components/reports/DailySnapshots"
+import { DailyReportDetail } from "@/components/reports/DailyReportDetail"
 import { toast } from "sonner"
 
 // Helper to format date as YYYY-MM-DD for input[type="date"]
@@ -60,6 +62,8 @@ const getPresetRange = (preset: string): [string, string] => {
 export const Reports: React.FC = () => {
     useAuth()
     const [activeTab, setActiveTab] = useState("financial")
+    const [view, setView] = useState<'main' | 'daily' | 'detail'>('main')
+    const [selectedDate, setSelectedDate] = useState<string | null>(null)
 
     // Date range state — default to last 7 days
     const [dateRange, setDateRange] = useState(() => {
@@ -81,6 +85,7 @@ export const Reports: React.FC = () => {
 
     // CSV Export
     const handleExport = async () => {
+        // ... (existing export logic remains same)
         try {
             if (activeTab === 'financial') {
                 const result = await window.api.getFinancialStats({ from: dateRange.from, to: dateRange.to })
@@ -178,6 +183,39 @@ export const Reports: React.FC = () => {
         ) + 1
     )
 
+    if (view === 'daily') {
+        return (
+            <div className="space-y-6">
+                <div className="flex items-center gap-4">
+                    <Button variant="outline" size="icon" className="rounded-full border-2" onClick={() => setView('main')}>
+                        <ArrowLeft className="h-5 w-5" />
+                    </Button>
+                    <div>
+                        <h1 className="text-3xl font-black tracking-tight">Daily Snapshots</h1>
+                        <p className="text-muted-foreground font-medium">Historical breakdown for the selected period.</p>
+                    </div>
+                </div>
+                <DailySnapshots 
+                    from={dateRange.from} 
+                    to={dateRange.to} 
+                    onSelectDay={(date) => {
+                        setSelectedDate(date)
+                        setView('detail')
+                    }} 
+                />
+            </div>
+        )
+    }
+
+    if (view === 'detail' && selectedDate) {
+        return (
+            <DailyReportDetail 
+                date={selectedDate} 
+                onBack={() => setView('daily')} 
+            />
+        )
+    }
+
     return (
         <div className="space-y-6 animate-in fade-in duration-500">
             {/* Header */}
@@ -188,9 +226,14 @@ export const Reports: React.FC = () => {
                     </h1>
                     <p className="text-muted-foreground font-medium">Business intelligence and performance analytics.</p>
                 </div>
-                <Button variant="default" className="font-bold h-12 px-6" onClick={handleExport}>
-                    <Download className="h-4 w-4 mr-2" /> Export CSV
-                </Button>
+                <div className="flex items-center gap-3">
+                    <Button variant="outline" className="font-bold h-12 px-6 border-2" onClick={() => setView('daily')}>
+                        <CalendarDays className="h-4 w-4 mr-2" /> Daily Reports
+                    </Button>
+                    <Button variant="default" className="font-bold h-12 px-6" onClick={handleExport}>
+                        <Download className="h-4 w-4 mr-2" /> Export CSV
+                    </Button>
+                </div>
             </div>
 
             {/* Date Range Controls */}
@@ -260,7 +303,6 @@ export const Reports: React.FC = () => {
 
                 <TabsContent value="financial" className="space-y-6">
                     <FinancialAnalytics from={dateRange.from} to={dateRange.to} />
-                    <DailySnapshots from={dateRange.from} to={dateRange.to} />
                 </TabsContent>
 
                 <TabsContent value="staff" className="space-y-6">
@@ -274,3 +316,4 @@ export const Reports: React.FC = () => {
         </div>
     )
 }
+
