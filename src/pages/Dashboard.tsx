@@ -1,6 +1,6 @@
 import React, { useEffect, useState } from 'react'
 import { Card, CardContent, CardHeader, CardTitle } from '../components/ui/card'
-import { Users, DollarSign, Gamepad2, Package, RefreshCw, TrendingUp } from 'lucide-react'
+import { Users, DollarSign, Gamepad2, Package, RefreshCw, TrendingUp, ShoppingCart } from 'lucide-react'
 import { Button } from '../components/ui/button'
 import { cn } from '../lib/utils'
 import {
@@ -60,10 +60,24 @@ export const Dashboard: React.FC = () => {
         <div className="space-y-6">
             <div className="flex justify-between items-center">
                 <h1 className="text-3xl font-bold tracking-tight">Dashboard Overview</h1>
-                <Button variant="outline" size="sm" onClick={fetchStats} disabled={loading}>
-                    <RefreshCw className={cn("h-4 w-4 mr-2", loading && "animate-spin")} />
-                    Refresh
-                </Button>
+                <div className="flex items-center gap-2">
+                    <Button variant="default" size="sm" onClick={() => window.location.href = '/pos'}>
+                        <ShoppingCart className="h-4 w-4 mr-2" />
+                        Open POS
+                    </Button>
+                    <Button variant="secondary" size="sm" onClick={() => window.location.href = '/sessions'}>
+                        <Gamepad2 className="h-4 w-4 mr-2" />
+                        Start Session
+                    </Button>
+                    <Button variant="outline" size="sm" onClick={() => window.location.href = '/inventory'}>
+                        <Package className="h-4 w-4 mr-2" />
+                        Restock
+                    </Button>
+                    <Button variant="outline" size="sm" onClick={fetchStats} disabled={loading}>
+                        <RefreshCw className={cn("h-4 w-4 mr-2", loading && "animate-spin")} />
+                        Refresh
+                    </Button>
+                </div>
             </div>
 
             <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">

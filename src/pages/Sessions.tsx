@@ -75,6 +75,29 @@ const TimerCard: React.FC<{
 
                 if (rem <= 0 && !notifiedRef.current) {
                     notifiedRef.current = true
+                    
+                    // Play an alert sound
+                    try {
+                        const audioCtx = new (window.AudioContext || (window as any).webkitAudioContext)();
+                        const oscillator = audioCtx.createOscillator();
+                        const gainNode = audioCtx.createGain();
+                        
+                        oscillator.type = 'sine';
+                        oscillator.frequency.setValueAtTime(880, audioCtx.currentTime);
+                        oscillator.frequency.exponentialRampToValueAtTime(440, audioCtx.currentTime + 0.2);
+                        
+                        gainNode.gain.setValueAtTime(0.2, audioCtx.currentTime);
+                        gainNode.gain.exponentialRampToValueAtTime(0.01, audioCtx.currentTime + 0.5);
+                        
+                        oscillator.connect(gainNode);
+                        gainNode.connect(audioCtx.destination);
+                        
+                        oscillator.start();
+                        oscillator.stop(audioCtx.currentTime + 0.5);
+                    } catch (e) {
+                        console.error('Audio playback failed', e);
+                    }
+
                     new Notification("Time's Up!", {
                         body: `${PC_POSTS.includes(postNumber) ? 'PC Gamer' : `Post ${postNumber}`} has finished its session.`,
                         silent: false

@@ -1,4 +1,4 @@
-import React, { useState } from 'react'
+import React, { useState, useEffect } from 'react'
 import { Link, useLocation, useNavigate } from 'react-router-dom'
 import { cn } from '../lib/utils'
 import { Button } from '../components/ui/button'
@@ -35,6 +35,32 @@ export const MainLayout: React.FC<{ children: React.ReactNode }> = ({ children }
     const location = useLocation()
     const navigate = useNavigate()
     const [isCollapsed, setIsCollapsed] = useState(false)
+    const [todayRevenue, setTodayRevenue] = useState<number>(0)
+
+    const fetchTodayRevenue = async () => {
+        try {
+            const startOfDay = new Date()
+            startOfDay.setHours(0, 0, 0, 0)
+            const endOfDay = new Date()
+            endOfDay.setHours(23, 59, 59, 999)
+
+            const res = await window.api.getFinancialStats({
+                from: startOfDay.toISOString(),
+                to: endOfDay.toISOString()
+            })
+            if (res.success && res.stats) {
+                setTodayRevenue(res.stats.revenue)
+            }
+        } catch (err) {
+            console.error('Failed to fetch today revenue', err)
+        }
+    }
+
+    useEffect(() => {
+        fetchTodayRevenue()
+        const interval = setInterval(fetchTodayRevenue, 5 * 60 * 1000) // 5 minutes
+        return () => clearInterval(interval)
+    }, [])
 
     const links = [
         { href: '/', label: 'Overview', icon: LayoutDashboard },
@@ -115,6 +141,13 @@ export const MainLayout: React.FC<{ children: React.ReactNode }> = ({ children }
                     </div>
 
                     <div className="pt-4 border-t border-border mt-auto space-y-2">
+                        {!isCollapsed && (
+                            <div className="px-3 py-2.5 mx-1 mb-2 flex items-center justify-between border rounded-xl bg-card shadow-sm">
+                                <span className="text-[10px] font-bold uppercase tracking-widest text-muted-foreground">Today</span>
+                                <span className="text-xs font-black text-primary">{todayRevenue.toFixed(2)} DH</span>
+                            </div>
+                        )}
+
                         <Tooltip delayDuration={0}>
                             <TooltipTrigger asChild>
                                 <Button
