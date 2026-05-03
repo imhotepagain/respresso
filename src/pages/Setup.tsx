@@ -35,11 +35,11 @@ export const Setup: React.FC = () => {
         setIsLoading(true)
 
         try {
-            // Create the first admin user
+            // Create the first user as OWNER (full access to all gated pages)
             const createResult = await window.api.createUser({
                 name,
                 password,
-                role: 'ADMIN' // Set as ADMIN/OWNER
+                role: 'OWNER'
             })
 
             if (createResult.success) {

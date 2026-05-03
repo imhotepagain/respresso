@@ -1,4 +1,5 @@
 import React, { useEffect, useState } from 'react'
+import { useNavigate } from 'react-router-dom'
 import { Card, CardContent, CardHeader, CardTitle } from '../components/ui/card'
 import { Users, DollarSign, Gamepad2, Package, RefreshCw, TrendingUp, ShoppingCart } from 'lucide-react'
 import { Button } from '../components/ui/button'
@@ -17,6 +18,7 @@ import {
 type TrendPoint = { hour: string; cash: number; debt: number; sessions: number }
 
 export const Dashboard: React.FC = () => {
+    const navigate = useNavigate()
     const [stats, setStats] = useState<{
         userCount: number
         activeSessions: number
@@ -61,15 +63,15 @@ export const Dashboard: React.FC = () => {
             <div className="flex justify-between items-center">
                 <h1 className="text-3xl font-bold tracking-tight">Dashboard Overview</h1>
                 <div className="flex items-center gap-2">
-                    <Button variant="default" size="sm" onClick={() => window.location.href = '/pos'}>
+                    <Button variant="default" size="sm" onClick={() => navigate('/pos')}>
                         <ShoppingCart className="h-4 w-4 mr-2" />
                         Open POS
                     </Button>
-                    <Button variant="secondary" size="sm" onClick={() => window.location.href = '/sessions'}>
+                    <Button variant="secondary" size="sm" onClick={() => navigate('/sessions')}>
                         <Gamepad2 className="h-4 w-4 mr-2" />
                         Start Session
                     </Button>
-                    <Button variant="outline" size="sm" onClick={() => window.location.href = '/inventory'}>
+                    <Button variant="outline" size="sm" onClick={() => navigate('/inventory')}>
                         <Package className="h-4 w-4 mr-2" />
                         Restock
                     </Button>
@@ -221,7 +223,7 @@ export const Dashboard: React.FC = () => {
                                         <div className="font-bold text-sm">{p.name}</div>
                                         <div className="flex items-center gap-3">
                                             <span className="text-sm font-mono font-bold text-destructive">{p.stock} left</span>
-                                            <Button variant="outline" size="sm" className="h-7 text-[10px] font-bold" onClick={() => window.location.href = '/inventory'}>RESTOCK</Button>
+                                            <Button variant="outline" size="sm" className="h-7 text-[10px] font-bold" onClick={() => navigate('/inventory')}>RESTOCK</Button>
                                         </div>
                                     </div>
                                 ))
