@@ -1269,6 +1269,7 @@ export function setupIpcHandlers() {
 
     ipcMain.handle('reports:getFinancialStats', async (_, options: { from: string; to: string }) => {
         try {
+            const isSingleDayRange = options.from === options.to
             const startDate = new Date(options.from)
             startDate.setHours(0, 0, 0, 0)
             const endDate = new Date(options.to)
@@ -1343,8 +1344,11 @@ export function setupIpcHandlers() {
             // Group data for charts
             const revenueByDay: Record<string, number> = {}
             const expensesByDay: Record<string, number> = {}
+            const revenueByHour: Record<string, number> = {}
+            const expensesByHour: Record<string, number> = {}
 
             const fmt = (d: Date) => d.toLocaleDateString('en-US', { month: 'short', day: 'numeric' })
+            const fmtHour = (d: Date) => `${String(d.getHours()).padStart(2, '0')}:00`
 
             // Initialize days in range
             const dayMs = 86400000
@@ -1356,6 +1360,14 @@ export function setupIpcHandlers() {
                 expensesByDay[key] = 0
             }
 
+            if (isSingleDayRange) {
+                for (let hour = 0; hour < 24; hour++) {
+                    const key = `${String(hour).padStart(2, '0')}:00`
+                    revenueByHour[key] = 0
+                    expensesByHour[key] = 0
+                }
+            }
+
             orders.forEach((o: any) => { const k = fmt(o.createdAt); revenueByDay[k] = (revenueByDay[k] || 0) + o.total })
             sessions.forEach((s: any) => { const k = fmt(s.createdAt); revenueByDay[k] = (revenueByDay[k] || 0) + (s.cost || 0) })
             debtPayments.forEach((p: any) => { const k = fmt(p.createdAt); revenueByDay[k] = (revenueByDay[k] || 0) + p.amount })
@@ -1364,6 +1376,29 @@ export function setupIpcHandlers() {
                 const k = fmt(l.createdAt)
                 expensesByDay[k] = (expensesByDay[k] || 0) + (l.cost || 0)
             })
+
+            if (isSingleDayRange) {
+                orders.forEach((o: any) => {
+                    const k = fmtHour(new Date(o.createdAt))
+                    revenueByHour[k] = (revenueByHour[k] || 0) + o.total
+                })
+                sessions.forEach((s: any) => {
+                    const k = fmtHour(new Date(s.createdAt))
+                    revenueByHour[k] = (revenueByHour[k] || 0) + (s.cost || 0)
+                })
+                debtPayments.forEach((p: any) => {
+                    const k = fmtHour(new Date(p.createdAt))
+                    revenueByHour[k] = (revenueByHour[k] || 0) + p.amount
+                })
+                expenses.forEach((e: any) => {
+                    const k = fmtHour(new Date(e.date))
+                    expensesByHour[k] = (expensesByHour[k] || 0) + e.amount
+                })
+                inventoryPurchases.forEach((l: any) => {
+                    const k = fmtHour(new Date(l.createdAt))
+                    expensesByHour[k] = (expensesByHour[k] || 0) + (l.cost || 0)
+                })
+            }
 
             // Expense breakdown by category for P&L
             const expensesByCategory: Record<string, number> = {}
@@ -1435,6 +1470,8 @@ export function setupIpcHandlers() {
                     sessionsCount: sessions.length,
                     revenueByDay: Object.entries(revenueByDay).map(([date, amount]) => ({ date, amount })),
                     expensesByDay: Object.entries(expensesByDay).map(([date, amount]) => ({ date, amount })),
+                    revenueByHour: Object.entries(revenueByHour).map(([hour, amount]) => ({ hour, amount })),
+                    expensesByHour: Object.entries(expensesByHour).map(([hour, amount]) => ({ hour, amount })),
                     expensesByCategory: Object.entries(expensesByCategory).map(([category, amount]) => ({ category, amount })),
                     productComparison,
                     topProducts,
@@ -1450,6 +1487,152 @@ export function setupIpcHandlers() {
         } catch (error) {
             console.error('Financial stats error:', error)
             return { success: false, error: 'Failed to fetch financial stats' }
+        }
+    })
+
+    ipcMain.handle('reports:getDailyDetails', async (_, options: { date: string }) => {
+        try {
+            const dayStart = new Date(options.date)
+            if (Number.isNaN(dayStart.getTime())) {
+                return { success: false, error: 'Invalid date' }
+            }
+            dayStart.setHours(0, 0, 0, 0)
+            const dayEnd = new Date(dayStart)
+            dayEnd.setHours(23, 59, 59, 999)
+            const dateFilter = { gte: dayStart, lte: dayEnd }
+
+            const [orders, sessions, debtPayments, expenses, inventoryLogs] = await Promise.all([
+                db.order.findMany({
+                    where: { createdAt: dateFilter },
+                    include: {
+                        items: {
+                            include: { product: true }
+                        },
+                        user: { select: { name: true } },
+                        staff: { select: { name: true } }
+                    },
+                    orderBy: { createdAt: 'desc' }
+                }),
+                db.session.findMany({
+                    where: { createdAt: dateFilter },
+                    include: { user: { select: { name: true } } },
+                    orderBy: { createdAt: 'desc' }
+                }),
+                db.debtPayment.findMany({
+                    where: { createdAt: dateFilter },
+                    include: { user: { select: { name: true } } },
+                    orderBy: { createdAt: 'desc' }
+                }),
+                db.expense.findMany({
+                    where: { date: dateFilter },
+                    orderBy: { date: 'desc' }
+                }),
+                db.inventoryLog.findMany({
+                    where: { createdAt: dateFilter },
+                    include: {
+                        product: { select: { name: true } },
+                        user: { select: { name: true } }
+                    },
+                    orderBy: { createdAt: 'desc' }
+                }),
+            ])
+
+            const paidOrders = orders.filter((o: any) => o.isPaid)
+            const revenueFromOrders = paidOrders.reduce((sum: number, o: any) => sum + o.total, 0)
+            const revenueFromSessions = sessions.reduce((sum: number, s: any) => sum + (s.cost || 0), 0)
+            const revenueFromDebt = debtPayments.reduce((sum: number, p: any) => sum + p.amount, 0)
+            const totalRevenue = revenueFromOrders + revenueFromSessions + revenueFromDebt
+
+            const explicitExpensesTotal = expenses.reduce((sum: number, e: any) => sum + e.amount, 0)
+            const purchaseLogs = inventoryLogs.filter((l: any) => ['PURCHASE_RECEIPT', 'RESTOCK'].includes(l.type))
+            const purchaseExpensesTotal = purchaseLogs.reduce((sum: number, l: any) => sum + (l.cost || 0), 0)
+            const totalExpenses = explicitExpensesTotal + purchaseExpensesTotal
+
+            const expensesByCategoryMap: Record<string, number> = {}
+            expenses.forEach((e: any) => {
+                const category = e.category || 'Other'
+                expensesByCategoryMap[category] = (expensesByCategoryMap[category] || 0) + e.amount
+            })
+            purchaseLogs.forEach((l: any) => {
+                const category = `Inventory Purchase: ${l.product?.name || 'Unknown Product'}`
+                expensesByCategoryMap[category] = (expensesByCategoryMap[category] || 0) + (l.cost || 0)
+            })
+
+            const productSalesMap: Record<string, { quantity: number; revenue: number }> = {}
+            orders.forEach((order: any) => {
+                order.items.forEach((item: any) => {
+                    const name = item.product?.name || 'Unknown'
+                    if (!productSalesMap[name]) {
+                        productSalesMap[name] = { quantity: 0, revenue: 0 }
+                    }
+                    productSalesMap[name].quantity += item.quantity
+                    productSalesMap[name].revenue += item.quantity * item.price
+                })
+            })
+
+            const details = {
+                date: options.date,
+                summary: {
+                    revenue: totalRevenue,
+                    expenses: totalExpenses,
+                    profit: totalRevenue - totalExpenses,
+                    ordersCount: orders.length,
+                    sessionsCount: sessions.length,
+                    debtPaymentsCount: debtPayments.length,
+                    inventoryMovementsCount: inventoryLogs.length,
+                },
+                revenue: {
+                    orders: revenueFromOrders,
+                    sessions: revenueFromSessions,
+                    debtPayments: revenueFromDebt,
+                },
+                expensesByCategory: Object.entries(expensesByCategoryMap)
+                    .map(([category, amount]) => ({ category, amount }))
+                    .sort((a, b) => b.amount - a.amount),
+                orders: orders.map((o: any) => ({
+                    id: o.id,
+                    total: o.total,
+                    isPaid: o.isPaid,
+                    createdAt: o.createdAt,
+                    itemsCount: o.items.length,
+                    staffName: o.staff?.name || null,
+                    clientName: o.user?.name || null,
+                })),
+                sessions: sessions.map((s: any) => ({
+                    id: s.id,
+                    userName: s.user?.name || null,
+                    startTime: s.startTime,
+                    endTime: s.endTime,
+                    duration: s.duration,
+                    cost: s.cost,
+                    status: s.status,
+                })),
+                debtPayments: debtPayments.map((p: any) => ({
+                    id: p.id,
+                    userName: p.user?.name || 'Unknown',
+                    amount: p.amount,
+                    createdAt: p.createdAt,
+                })),
+                inventoryMovements: inventoryLogs.map((l: any) => ({
+                    id: l.id,
+                    type: l.type,
+                    productName: l.product?.name || null,
+                    change: l.change,
+                    cost: l.cost || 0,
+                    note: l.note || null,
+                    createdAt: l.createdAt,
+                    userName: l.user?.name || null,
+                })),
+                topProducts: Object.entries(productSalesMap)
+                    .map(([name, data]) => ({ name, quantity: data.quantity, revenue: data.revenue }))
+                    .sort((a, b) => b.quantity - a.quantity)
+                    .slice(0, 8),
+            }
+
+            return { success: true, details }
+        } catch (error) {
+            console.error('Daily details error:', error)
+            return { success: false, error: 'Failed to fetch daily details' }
         }
     })
 

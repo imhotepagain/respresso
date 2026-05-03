@@ -54,6 +54,7 @@ const api: ElectronAPI = {
   // Analytics
   getFinancialStats: (options) => ipcRenderer.invoke('reports:getFinancialStats', options),
   getStaffPerformance: (options) => ipcRenderer.invoke('reports:getStaffPerformance', options),
+  getDailyReportDetails: (options) => ipcRenderer.invoke('reports:getDailyDetails', options),
 
   // Reports
   getAnalytics: (options) => ipcRenderer.invoke('reports:getAnalytics', options),

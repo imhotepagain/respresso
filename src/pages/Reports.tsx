@@ -8,6 +8,7 @@ import {
     Users,
     Activity,
     CalendarDays,
+    ArrowRight,
 } from 'lucide-react'
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
@@ -16,6 +17,7 @@ import { useAuth } from "@/providers/AuthProvider"
 import { FinancialAnalytics } from "@/components/reports/FinancialAnalytics"
 import { ActivityLog } from "@/components/reports/ActivityLog"
 import { StaffPerformance } from "@/components/reports/StaffPerformance"
+import { DailySnapshots } from "@/components/reports/DailySnapshots"
 import { toast } from "sonner"
 
 // Helper to format date as YYYY-MM-DD for input[type="date"]
@@ -168,6 +170,13 @@ export const Reports: React.FC = () => {
         { key: 'month', label: '30 Days' },
         { key: 'quarter', label: '90 Days' },
     ]
+    const selectedDays = Math.max(
+        1,
+        Math.floor(
+            (new Date(dateRange.to).setHours(0, 0, 0, 0) - new Date(dateRange.from).setHours(0, 0, 0, 0)) /
+            (24 * 60 * 60 * 1000)
+        ) + 1
+    )
 
     return (
         <div className="space-y-6 animate-in fade-in duration-500">
@@ -185,13 +194,19 @@ export const Reports: React.FC = () => {
             </div>
 
             {/* Date Range Controls */}
-            <div className="flex flex-col lg:flex-row items-start lg:items-end gap-4 p-4 bg-card border-2 rounded-2xl shadow-sm">
-                <div className="flex items-center gap-2">
-                    <CalendarDays className="h-5 w-5 text-primary shrink-0" />
-                    <span className="text-sm font-black uppercase tracking-widest text-muted-foreground shrink-0">Period</span>
-                </div>
+            <div className="p-4 bg-card border-2 rounded-2xl shadow-sm">
+                <div className="flex flex-col xl:flex-row xl:items-end gap-4">
+                    <div className="flex items-center gap-3 min-w-[220px]">
+                        <div className="h-10 w-10 rounded-xl bg-primary/10 text-primary flex items-center justify-center">
+                            <CalendarDays className="h-5 w-5" />
+                        </div>
+                        <div>
+                            <div className="text-sm font-black uppercase tracking-widest text-muted-foreground">Period</div>
+                            <div className="text-xs font-semibold text-muted-foreground">{selectedDays} day{selectedDays > 1 ? 's' : ''} selected</div>
+                        </div>
+                    </div>
 
-                <div className="flex flex-wrap gap-2">
+                    <div className="flex flex-wrap gap-2">
                     {presets.map(p => (
                         <Button
                             key={p.key}
@@ -203,26 +218,28 @@ export const Reports: React.FC = () => {
                             {p.label}
                         </Button>
                     ))}
-                </div>
-
-                <div className="flex items-end gap-3 ml-auto">
-                    <div className="space-y-1">
-                        <Label className="text-[9px] font-bold uppercase tracking-widest text-muted-foreground">From</Label>
-                        <Input
-                            type="date"
-                            value={dateRange.from}
-                            onChange={(e) => handleCustomDate('from', e.target.value)}
-                            className="h-9 w-[150px] font-medium text-xs bg-background"
-                        />
                     </div>
-                    <div className="space-y-1">
-                        <Label className="text-[9px] font-bold uppercase tracking-widest text-muted-foreground">To</Label>
-                        <Input
-                            type="date"
-                            value={dateRange.to}
-                            onChange={(e) => handleCustomDate('to', e.target.value)}
-                            className="h-9 w-[150px] font-medium text-xs bg-background"
-                        />
+
+                    <div className="flex items-end gap-3 xl:ml-auto">
+                        <div className="space-y-1">
+                            <Label className="text-[9px] font-bold uppercase tracking-widest text-muted-foreground">From</Label>
+                            <Input
+                                type="date"
+                                value={dateRange.from}
+                                onChange={(e) => handleCustomDate('from', e.target.value)}
+                                className="h-10 w-[170px] font-semibold text-sm bg-background rounded-xl"
+                            />
+                        </div>
+                        <div className="pb-2 text-muted-foreground"><ArrowRight className="h-4 w-4" /></div>
+                        <div className="space-y-1">
+                            <Label className="text-[9px] font-bold uppercase tracking-widest text-muted-foreground">To</Label>
+                            <Input
+                                type="date"
+                                value={dateRange.to}
+                                onChange={(e) => handleCustomDate('to', e.target.value)}
+                                className="h-10 w-[170px] font-semibold text-sm bg-background rounded-xl"
+                            />
+                        </div>
                     </div>
                 </div>
             </div>
@@ -243,6 +260,7 @@ export const Reports: React.FC = () => {
 
                 <TabsContent value="financial" className="space-y-6">
                     <FinancialAnalytics from={dateRange.from} to={dateRange.to} />
+                    <DailySnapshots from={dateRange.from} to={dateRange.to} />
                 </TabsContent>
 
                 <TabsContent value="staff" className="space-y-6">

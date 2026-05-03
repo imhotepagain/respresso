@@ -136,6 +136,64 @@ export interface DailyStats {
     }>
 }
 
+export interface DailyReportDetails {
+    date: string
+    summary: {
+        revenue: number
+        expenses: number
+        profit: number
+        ordersCount: number
+        sessionsCount: number
+        debtPaymentsCount: number
+        inventoryMovementsCount: number
+    }
+    revenue: {
+        orders: number
+        sessions: number
+        debtPayments: number
+    }
+    expensesByCategory: Array<{ category: string; amount: number }>
+    orders: Array<{
+        id: string
+        total: number
+        isPaid: boolean
+        createdAt: Date
+        itemsCount: number
+        staffName: string | null
+        clientName: string | null
+    }>
+    sessions: Array<{
+        id: string
+        userName: string | null
+        startTime: Date
+        endTime: Date | null
+        duration: number | null
+        cost: number | null
+        status: string
+    }>
+    debtPayments: Array<{
+        id: string
+        userName: string
+        amount: number
+        createdAt: Date
+    }>
+    inventoryMovements: Array<{
+        id: string
+        type: string
+        productName: string | null
+        change: number
+        cost: number
+        note: string | null
+        createdAt: Date
+        userName: string | null
+    }>
+    topProducts: Array<{
+        name: string
+        quantity: number
+        revenue: number
+    }>
+}
+
 export interface ApiResponse<T> {
     success: boolean
     error?: string
@@ -244,6 +302,8 @@ export interface ElectronAPI {
             sessionsCount: number;
             revenueByDay: { date: string; amount: number }[];
             expensesByDay: { date: string; amount: number }[];
+            revenueByHour: { hour: string; amount: number }[];
+            expensesByHour: { hour: string; amount: number }[];
             expensesByCategory: { category: string; amount: number }[];
             deltas: {
                 revenue: number;
@@ -269,6 +329,11 @@ export interface ElectronAPI {
         }[];
         error?: string;
     }>;
+    getDailyReportDetails: (options: { date: string }) => Promise<{
+        success: boolean
+        details?: DailyReportDetails
+        error?: string
+    }>
 
     // Reports
     getAnalytics: (options?: { days?: number }) => Promise<{
