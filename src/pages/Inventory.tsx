@@ -20,7 +20,7 @@ import {
     Edit2,
     Package,
     AlertTriangle,
-    DollarSign,
+    Boxes,
     ArrowUpDown,
     Filter
 } from 'lucide-react'
@@ -221,11 +221,12 @@ export const Inventory: React.FC = () => {
 
     const kpis = useMemo(() => {
         const tangibleProducts = products.filter(p => p.type !== 'SERVICE')
+        const finiteProducts = tangibleProducts.filter(p => p.stock < 900000)
         return {
             totalItems: products.length,
             lowStock: tangibleProducts.filter(p => p.stock > 0 && p.stock <= 10).length,
             outOfStock: tangibleProducts.filter(p => p.stock <= 0).length,
-            totalValue: tangibleProducts.reduce((sum, p) => sum + (p.price * Math.max(0, p.stock)), 0)
+            totalUnits: finiteProducts.reduce((sum, p) => sum + Math.max(0, p.stock), 0)
         }
     }, [products])
 
@@ -333,14 +334,14 @@ export const Inventory: React.FC = () => {
                     </CardContent>
                 </Card>
 
-                <Card className="border-2 shadow-sm bg-emerald-500/5 border-emerald-500/10">
+                <Card className="border-2 shadow-sm bg-blue-500/5 border-blue-500/10">
                     <CardContent className="p-5 flex items-center gap-4">
-                        <div className="p-3 bg-emerald-500/10 rounded-2xl">
-                            <DollarSign className="h-6 w-6 text-emerald-600" />
+                        <div className="p-3 bg-blue-500/10 rounded-2xl">
+                            <Boxes className="h-6 w-6 text-blue-600" />
                         </div>
                         <div>
-                            <div className="text-[10px] font-black uppercase tracking-widest text-emerald-600">Total Value</div>
-                            <div className="text-2xl font-black text-emerald-600">{kpis.totalValue.toFixed(2)} DH</div>
+                            <div className="text-[10px] font-black uppercase tracking-widest text-blue-600">Total Units</div>
+                            <div className="text-2xl font-black text-blue-600">{kpis.totalUnits}</div>
                         </div>
                     </CardContent>
                 </Card>
