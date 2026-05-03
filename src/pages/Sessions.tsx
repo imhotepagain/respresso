@@ -1,5 +1,6 @@
 import React, { useState, useEffect, useRef } from "react"
 import { Session } from "../types/electron"
+import { useAuth } from "@/providers/AuthProvider"
 import {
     Table,
     TableBody,
@@ -53,6 +54,7 @@ const TimerCard: React.FC<{
     onStart: (post: number) => void;
     onComplete: () => void
 }> = ({ postNumber, session, onStart, onComplete }) => {
+    const { user: currentUser } = useAuth()
     const [elapsed, setElapsed] = useState(0)
     const [remaining, setRemaining] = useState<number | null>(null)
     const [isEndOpen, setIsEndOpen] = useState(false)
@@ -134,6 +136,7 @@ const TimerCard: React.FC<{
                     address: localStorage.getItem('shop-address') || undefined,
                     footer: localStorage.getItem('shop-footer') || undefined,
                     session: result.session,
+                    staffName: currentUser?.name,
                     printerName
                 })
             }

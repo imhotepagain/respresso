@@ -379,6 +379,7 @@ export interface ElectronAPI {
         phone?: string
         order?: Order
         session?: Session
+        staffName?: string
         footer?: string
         printerName?: string
     }) => Promise<{ success: boolean; error?: string }>

@@ -439,6 +439,11 @@ export function setupIpcHandlers() {
                                 product: true,
                             },
                         },
+                        staff: {
+                            select: {
+                                name: true
+                            }
+                        }
                     },
                 })
 
@@ -1725,6 +1730,7 @@ export function setupIpcHandlers() {
         phone?: string
         order?: any
         session?: any
+        staffName?: string
         footer?: string
         printerName?: string
     }) => {
@@ -1759,6 +1765,15 @@ export function setupIpcHandlers() {
                 value: `Date: ${now}`,
                 style: { fontSize: "12px" }
             })
+
+            const staffDisplay = data.staffName || data.order?.staff?.name
+            if (staffDisplay) {
+                receiptData.push({
+                    type: 'text',
+                    value: `Staff: ${staffDisplay}`,
+                    style: { fontSize: "12px" }
+                })
+            }
 
             if (data.order) {
                 receiptData.push({

@@ -110,6 +110,7 @@ export const POS: React.FC = () => {
                     address: localStorage.getItem('shop-address') || undefined,
                     footer: localStorage.getItem('shop-footer') || undefined,
                     order: result.order,
+                    staffName: currentUser?.name,
                     printerName
                 })
             }
