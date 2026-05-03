@@ -206,18 +206,42 @@ export interface ElectronAPI {
     getAllShifts: () => Promise<{ success: boolean; shifts?: Shift[]; error?: string }>;
 
     // Analytics
-    getFinancialStats: (period: 'daily' | 'weekly' | 'monthly') => Promise<{
+    getFinancialStats: (options: { from: string; to: string }) => Promise<{
         success: boolean;
         stats?: {
             revenue: number;
+            revenueFromOrders: number;
+            revenueFromSessions: number;
+            revenueFromDebt: number;
             expenses: number;
             profit: number;
             ordersCount: number;
             sessionsCount: number;
-            topProducts: { name: string; count: number; revenue: number }[];
             revenueByDay: { date: string; amount: number }[];
             expensesByDay: { date: string; amount: number }[];
+            expensesByCategory: { category: string; amount: number }[];
+            deltas: {
+                revenue: number;
+                expenses: number;
+                profit: number;
+                orders: number;
+                sessions: number;
+            };
         };
+        error?: string;
+    }>;
+    getStaffPerformance: (options: { from: string; to: string }) => Promise<{
+        success: boolean;
+        staff?: {
+            id: string;
+            name: string;
+            role: string;
+            ordersCount: number;
+            ordersRevenue: number;
+            cashRevenue: number;
+            shiftsCount: number;
+            shiftMinutes: number;
+        }[];
         error?: string;
     }>;
 

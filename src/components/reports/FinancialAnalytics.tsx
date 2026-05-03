@@ -9,23 +9,51 @@ import {
     ResponsiveContainer
 } from 'recharts'
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "../ui/card"
-import { Tabs, TabsList, TabsTrigger } from "../ui/tabs"
-import { Loader2, TrendingUp, TrendingDown, Wallet } from 'lucide-react'
+import {
+    Table,
+    TableBody,
+    TableCell,
+    TableHead,
+    TableHeader,
+    TableRow,
+} from "../ui/table"
+import { Loader2, TrendingUp, TrendingDown, Wallet, ShoppingBag, Gamepad2, ArrowUpRight, ArrowDownRight } from 'lucide-react'
 import { toast } from 'sonner'
+import { cn } from '@/lib/utils'
 
-export function FinancialAnalytics() {
-    const [period, setPeriod] = useState<'daily' | 'weekly' | 'monthly'>('weekly')
+interface FinancialAnalyticsProps {
+    from: string
+    to: string
+}
+
+function DeltaBadge({ value }: { value: number }) {
+    if (value === 0) return null
+    const isPositive = value > 0
+    return (
+        <div className={cn(
+            "inline-flex items-center gap-0.5 px-2 py-0.5 rounded-full text-[10px] font-black",
+            isPositive
+                ? "bg-emerald-500/10 text-emerald-600 border border-emerald-500/20"
+                : "bg-red-500/10 text-red-500 border border-red-500/20"
+        )}>
+            {isPositive ? <ArrowUpRight className="h-3 w-3" /> : <ArrowDownRight className="h-3 w-3" />}
+            {isPositive ? '+' : ''}{value}%
+        </div>
+    )
+}
+
+export function FinancialAnalytics({ from, to }: FinancialAnalyticsProps) {
     const [stats, setStats] = useState<any>(null)
     const [loading, setLoading] = useState(true)
 
     useEffect(() => {
         fetchStats()
-    }, [period])
+    }, [from, to])
 
     const fetchStats = async () => {
         setLoading(true)
         try {
-            const result = await window.api.getFinancialStats(period)
+            const result = await window.api.getFinancialStats({ from, to })
             if (result.success) {
                 setStats(result.stats)
             } else {
@@ -55,64 +83,92 @@ export function FinancialAnalytics() {
 
     return (
         <div className="space-y-6 animate-in fade-in duration-500">
-            <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4">
-                <Tabs value={period} onValueChange={(v: any) => setPeriod(v)} className="bg-muted/50 p-1 border-2 rounded-xl">
-                    <TabsList className="bg-transparent border-none">
-                        <TabsTrigger value="daily" className="rounded-lg font-bold px-6">DAILY</TabsTrigger>
-                        <TabsTrigger value="weekly" className="rounded-lg font-bold px-6">WEEKLY</TabsTrigger>
-                        <TabsTrigger value="monthly" className="rounded-lg font-bold px-6">MONTHLY</TabsTrigger>
-                    </TabsList>
-                </Tabs>
-            </div>
-
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+            {/* KPI Cards */}
+            <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-5 gap-4">
                 <Card className="border-2 shadow-sm bg-emerald-500/5 border-emerald-500/10">
                     <CardHeader className="pb-2">
-                        <CardTitle className="text-xs font-black uppercase tracking-widest text-emerald-600 flex items-center gap-2">
-                            <TrendingUp className="w-4 h-4" /> Gross Revenue
+                        <CardTitle className="text-[10px] font-black uppercase tracking-widest text-emerald-600 flex items-center gap-2">
+                            <TrendingUp className="w-3.5 h-3.5" /> Revenue
                         </CardTitle>
                     </CardHeader>
-                    <CardContent>
-                        <div className="text-3xl font-black text-emerald-600">{stats?.revenue.toFixed(2)} DH</div>
-                        <p className="text-[10px] font-bold text-muted-foreground mt-1 uppercase tracking-widest">Inflow from all sources</p>
+                    <CardContent className="pt-0">
+                        <div className="text-2xl font-black text-emerald-600">{stats?.revenue.toFixed(2)} <span className="text-xs font-bold text-muted-foreground">DH</span></div>
+                        <div className="mt-1.5">
+                            <DeltaBadge value={stats?.deltas?.revenue || 0} />
+                        </div>
                     </CardContent>
                 </Card>
 
                 <Card className="border-2 shadow-sm bg-destructive/5 border-destructive/10">
                     <CardHeader className="pb-2">
-                        <CardTitle className="text-xs font-black uppercase tracking-widest text-destructive flex items-center gap-2">
-                            <TrendingDown className="w-4 h-4" /> Total Expenses
+                        <CardTitle className="text-[10px] font-black uppercase tracking-widest text-destructive flex items-center gap-2">
+                            <TrendingDown className="w-3.5 h-3.5" /> Expenses
                         </CardTitle>
                     </CardHeader>
-                    <CardContent>
-                        <div className="text-3xl font-black text-destructive">-{stats?.expenses.toFixed(2)} DH</div>
-                        <p className="text-[10px] font-bold text-muted-foreground mt-1 uppercase tracking-widest">Bills, Restocks & Outflows</p>
+                    <CardContent className="pt-0">
+                        <div className="text-2xl font-black text-destructive">-{stats?.expenses.toFixed(2)} <span className="text-xs font-bold text-muted-foreground">DH</span></div>
+                        <div className="mt-1.5">
+                            <DeltaBadge value={stats?.deltas?.expenses ? -stats.deltas.expenses : 0} />
+                        </div>
                     </CardContent>
                 </Card>
 
                 <Card className="border-2 shadow-sm bg-primary/5 border-primary/10">
                     <CardHeader className="pb-2">
-                        <CardTitle className="text-xs font-black uppercase tracking-widest text-primary flex items-center gap-2">
-                            <Wallet className="w-4 h-4" /> Net Profit
+                        <CardTitle className="text-[10px] font-black uppercase tracking-widest text-primary flex items-center gap-2">
+                            <Wallet className="w-3.5 h-3.5" /> Net Profit
                         </CardTitle>
                     </CardHeader>
-                    <CardContent>
-                        <div className="text-3xl font-black">{stats?.profit.toFixed(2)} DH</div>
-                        <p className="text-[10px] font-bold text-muted-foreground mt-1 uppercase tracking-widest">Take-home earnings</p>
+                    <CardContent className="pt-0">
+                        <div className={cn("text-2xl font-black", (stats?.profit || 0) >= 0 ? "text-foreground" : "text-destructive")}>
+                            {stats?.profit.toFixed(2)} <span className="text-xs font-bold text-muted-foreground">DH</span>
+                        </div>
+                        <div className="mt-1.5">
+                            <DeltaBadge value={stats?.deltas?.profit || 0} />
+                        </div>
+                    </CardContent>
+                </Card>
+
+                <Card className="border-2 shadow-sm bg-blue-500/5 border-blue-500/10">
+                    <CardHeader className="pb-2">
+                        <CardTitle className="text-[10px] font-black uppercase tracking-widest text-blue-500 flex items-center gap-2">
+                            <ShoppingBag className="w-3.5 h-3.5" /> Orders
+                        </CardTitle>
+                    </CardHeader>
+                    <CardContent className="pt-0">
+                        <div className="text-2xl font-black">{stats?.ordersCount || 0}</div>
+                        <div className="mt-1.5">
+                            <DeltaBadge value={stats?.deltas?.orders || 0} />
+                        </div>
+                    </CardContent>
+                </Card>
+
+                <Card className="border-2 shadow-sm bg-purple-500/5 border-purple-500/10">
+                    <CardHeader className="pb-2">
+                        <CardTitle className="text-[10px] font-black uppercase tracking-widest text-purple-500 flex items-center gap-2">
+                            <Gamepad2 className="w-3.5 h-3.5" /> Sessions
+                        </CardTitle>
+                    </CardHeader>
+                    <CardContent className="pt-0">
+                        <div className="text-2xl font-black">{stats?.sessionsCount || 0}</div>
+                        <div className="mt-1.5">
+                            <DeltaBadge value={stats?.deltas?.sessions || 0} />
+                        </div>
                     </CardContent>
                 </Card>
             </div>
 
-            <Card className="border-2 shadow-xl overflow-hidden rounded-3xl">
-                <CardHeader className="bg-muted/10 border-b px-8 py-6">
+            {/* Revenue vs Expenses Chart */}
+            <Card className="border-2 shadow-sm overflow-hidden rounded-2xl">
+                <CardHeader className="bg-muted/10 border-b px-8 py-5">
                     <div className="flex items-center justify-between">
                         <div>
-                            <CardTitle className="text-lg font-black uppercase tracking-tight">Revenue vs Expenses</CardTitle>
-                            <CardDescription className="font-medium">Comparing business inflow and outflow over time</CardDescription>
+                            <CardTitle className="text-base font-black uppercase tracking-tight">Revenue vs Expenses</CardTitle>
+                            <CardDescription className="font-medium text-xs mt-0.5">Inflow and outflow over the selected period</CardDescription>
                         </div>
                         <div className="flex gap-4">
                             <div className="flex items-center gap-2">
-                                <div className="w-3 h-3 rounded-full bg-primary" />
+                                <div className="w-3 h-3 rounded-full bg-emerald-500" />
                                 <span className="text-[10px] font-black uppercase tracking-widest">Revenue</span>
                             </div>
                             <div className="flex items-center gap-2">
@@ -122,62 +178,164 @@ export function FinancialAnalytics() {
                         </div>
                     </div>
                 </CardHeader>
-                <CardContent className="h-[450px] p-8">
+                <CardContent className="h-[350px] p-6">
                     <ResponsiveContainer width="100%" height="100%">
                         <AreaChart data={chartData} margin={{ top: 10, right: 10, left: 0, bottom: 0 }}>
                             <defs>
-                                <linearGradient id="colorRevenue" x1="0" y1="0" x2="0" y2="1">
-                                    <stop offset="5%" stopColor="hsl(var(--primary))" stopOpacity={0.3} />
-                                    <stop offset="95%" stopColor="hsl(var(--primary))" stopOpacity={0} />
+                                <linearGradient id="colorRevFinance" x1="0" y1="0" x2="0" y2="1">
+                                    <stop offset="5%" stopColor="#10b981" stopOpacity={0.3} />
+                                    <stop offset="95%" stopColor="#10b981" stopOpacity={0} />
                                 </linearGradient>
-                                <linearGradient id="colorExpenses" x1="0" y1="0" x2="0" y2="1">
+                                <linearGradient id="colorExpFinance" x1="0" y1="0" x2="0" y2="1">
                                     <stop offset="5%" stopColor="hsl(var(--destructive))" stopOpacity={0.3} />
                                     <stop offset="95%" stopColor="hsl(var(--destructive))" stopOpacity={0} />
                                 </linearGradient>
                             </defs>
-                            <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="hsl(var(--border))" opacity={0.5} />
+                            <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="hsl(var(--border))" opacity={0.4} />
                             <XAxis
                                 dataKey="date"
-                                tick={{ fontSize: 11, fontWeight: 700, fill: '#94a3b8' }}
+                                tick={{ fontSize: 10, fontWeight: 700, fill: '#94a3b8' }}
                                 axisLine={false}
                                 tickLine={false}
-                                dy={10}
+                                dy={8}
                             />
                             <YAxis
-                                tick={{ fontSize: 11, fontWeight: 700, fill: '#94a3b8' }}
+                                tick={{ fontSize: 10, fontWeight: 700, fill: '#94a3b8' }}
                                 axisLine={false}
                                 tickLine={false}
-                                dx={-10}
-                                tickFormatter={(value) => `${value} DH`}
+                                dx={-5}
+                                tickFormatter={(value) => `${value}`}
                             />
                             <Tooltip
                                 contentStyle={{
                                     backgroundColor: 'hsl(var(--card))',
                                     borderColor: 'hsl(var(--border))',
-                                    borderRadius: '16px',
+                                    borderRadius: '12px',
                                     fontSize: '12px',
                                     fontWeight: 'bold',
-                                    boxShadow: '0 20px 25px -5px rgb(0 0 0 / 0.1)'
+                                    boxShadow: '0 10px 25px -5px rgb(0 0 0 / 0.2)'
                                 }}
+                                formatter={(value: any, name: any) => [`${Number(value).toFixed(2)} DH`, name]}
                             />
                             <Area
                                 type="monotone"
                                 dataKey="revenue"
-                                stroke="hsl(var(--primary))"
-                                strokeWidth={4}
+                                name="Revenue"
+                                stroke="#10b981"
+                                strokeWidth={2.5}
                                 fillOpacity={1}
-                                fill="url(#colorRevenue)"
+                                fill="url(#colorRevFinance)"
                             />
                             <Area
                                 type="monotone"
                                 dataKey="expenses"
+                                name="Expenses"
                                 stroke="hsl(var(--destructive))"
-                                strokeWidth={4}
+                                strokeWidth={2.5}
                                 fillOpacity={1}
-                                fill="url(#colorExpenses)"
+                                fill="url(#colorExpFinance)"
                             />
                         </AreaChart>
                     </ResponsiveContainer>
+                </CardContent>
+            </Card>
+
+            {/* P&L Summary Table */}
+            <Card className="border-2 shadow-sm rounded-2xl overflow-hidden">
+                <CardHeader className="bg-muted/10 border-b px-6 py-4">
+                    <CardTitle className="text-sm font-black uppercase tracking-widest text-primary">
+                        Profit & Loss Summary
+                    </CardTitle>
+                </CardHeader>
+                <CardContent className="p-0">
+                    <Table>
+                        <TableHeader className="bg-muted/30">
+                            <TableRow>
+                                <TableHead className="font-black text-xs uppercase tracking-wider w-[50%]">Category</TableHead>
+                                <TableHead className="font-black text-xs uppercase tracking-wider text-right">Amount (DH)</TableHead>
+                            </TableRow>
+                        </TableHeader>
+                        <TableBody>
+                            {/* Revenue Section */}
+                            <TableRow className="bg-emerald-500/[0.03] hover:bg-emerald-500/[0.06]">
+                                <TableCell className="font-black text-emerald-600 text-sm">
+                                    <div className="flex items-center gap-2">
+                                        <div className="w-1.5 h-6 bg-emerald-500 rounded-full" />
+                                        Revenue from Orders
+                                    </div>
+                                </TableCell>
+                                <TableCell className="text-right font-black text-emerald-600">
+                                    +{(stats?.revenueFromOrders || 0).toFixed(2)}
+                                </TableCell>
+                            </TableRow>
+                            <TableRow className="bg-emerald-500/[0.03] hover:bg-emerald-500/[0.06]">
+                                <TableCell className="font-black text-emerald-600 text-sm">
+                                    <div className="flex items-center gap-2">
+                                        <div className="w-1.5 h-6 bg-emerald-500 rounded-full" />
+                                        Revenue from Sessions
+                                    </div>
+                                </TableCell>
+                                <TableCell className="text-right font-black text-emerald-600">
+                                    +{(stats?.revenueFromSessions || 0).toFixed(2)}
+                                </TableCell>
+                            </TableRow>
+                            <TableRow className="bg-emerald-500/[0.03] hover:bg-emerald-500/[0.06]">
+                                <TableCell className="font-black text-emerald-600 text-sm">
+                                    <div className="flex items-center gap-2">
+                                        <div className="w-1.5 h-6 bg-emerald-500 rounded-full" />
+                                        Debt Payments Collected
+                                    </div>
+                                </TableCell>
+                                <TableCell className="text-right font-black text-emerald-600">
+                                    +{(stats?.revenueFromDebt || 0).toFixed(2)}
+                                </TableCell>
+                            </TableRow>
+
+                            {/* Expense Section */}
+                            {stats?.expensesByCategory?.map((exp: any) => (
+                                <TableRow key={exp.category} className="bg-destructive/[0.02] hover:bg-destructive/[0.05]">
+                                    <TableCell className="font-bold text-destructive text-sm">
+                                        <div className="flex items-center gap-2">
+                                            <div className="w-1.5 h-6 bg-destructive rounded-full" />
+                                            {exp.category}
+                                        </div>
+                                    </TableCell>
+                                    <TableCell className="text-right font-black text-destructive">
+                                        -{exp.amount.toFixed(2)}
+                                    </TableCell>
+                                </TableRow>
+                            ))}
+
+                            {/* Totals */}
+                            <TableRow className="border-t-2 bg-muted/20">
+                                <TableCell className="font-black text-base py-4">
+                                    TOTAL REVENUE
+                                </TableCell>
+                                <TableCell className="text-right font-black text-base text-emerald-600 py-4">
+                                    +{(stats?.revenue || 0).toFixed(2)} DH
+                                </TableCell>
+                            </TableRow>
+                            <TableRow className="bg-muted/20">
+                                <TableCell className="font-black text-base py-4">
+                                    TOTAL EXPENSES
+                                </TableCell>
+                                <TableCell className="text-right font-black text-base text-destructive py-4">
+                                    -{(stats?.expenses || 0).toFixed(2)} DH
+                                </TableCell>
+                            </TableRow>
+                            <TableRow className="border-t-4 border-primary/20 bg-primary/[0.03]">
+                                <TableCell className="font-black text-lg py-5 text-primary">
+                                    NET PROFIT
+                                </TableCell>
+                                <TableCell className={cn(
+                                    "text-right font-black text-xl py-5",
+                                    (stats?.profit || 0) >= 0 ? "text-primary" : "text-destructive"
+                                )}>
+                                    {(stats?.profit || 0).toFixed(2)} DH
+                                </TableCell>
+                            </TableRow>
+                        </TableBody>
+                    </Table>
                 </CardContent>
             </Card>
         </div>

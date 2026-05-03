@@ -52,7 +52,8 @@ const api: ElectronAPI = {
   getAllShifts: () => ipcRenderer.invoke('shifts:getAll'),
 
   // Analytics
-  getFinancialStats: (period) => ipcRenderer.invoke('reports:getFinancialStats', period),
+  getFinancialStats: (options) => ipcRenderer.invoke('reports:getFinancialStats', options),
+  getStaffPerformance: (options) => ipcRenderer.invoke('reports:getStaffPerformance', options),
 
   // Reports
   getAnalytics: (options) => ipcRenderer.invoke('reports:getAnalytics', options),

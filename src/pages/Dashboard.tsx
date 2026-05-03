@@ -163,7 +163,7 @@ export const Dashboard: React.FC = () => {
                                         fontWeight: 'bold',
                                         boxShadow: '0 10px 25px -5px rgb(0 0 0 / 0.2)'
                                     }}
-                                    formatter={(value: number, name: string) => [`${value.toFixed(2)} DH`, name]}
+                                    formatter={(value: any, name: any) => [`${Number(value).toFixed(2)} DH`, name]}
                                 />
                                 <Legend
                                     verticalAlign="top"

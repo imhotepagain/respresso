@@ -1036,17 +1036,24 @@ export function setupIpcHandlers() {
         }
     })
 
-    ipcMain.handle('reports:getFinancialStats', async (_, period: 'daily' | 'weekly' | 'monthly') => {
+    ipcMain.handle('reports:getFinancialStats', async (_, options: { from: string; to: string }) => {
         try {
-            const now = new Date()
-            let startDate = new Date()
+            const startDate = new Date(options.from)
+            startDate.setHours(0, 0, 0, 0)
+            const endDate = new Date(options.to)
+            endDate.setHours(23, 59, 59, 999)
 
-            if (period === 'daily') startDate.setHours(0, 0, 0, 0)
-            else if (period === 'weekly') startDate.setDate(now.getDate() - 7)
-            else if (period === 'monthly') startDate.setDate(now.getDate() - 30)
+            const dateFilter = { gte: startDate, lte: endDate }
 
-            const dateFilter = { gte: startDate }
+            // Calculate the previous period of equal length for comparison
+            const periodMs = endDate.getTime() - startDate.getTime()
+            const prevEnd = new Date(startDate.getTime() - 1)
+            prevEnd.setHours(23, 59, 59, 999)
+            const prevStart = new Date(prevEnd.getTime() - periodMs)
+            prevStart.setHours(0, 0, 0, 0)
+            const prevDateFilter = { gte: prevStart, lte: prevEnd }
 
+            // Current period data
             const [orders, sessions, expenses, debtPayments] = await Promise.all([
                 db.order.findMany({ where: { createdAt: dateFilter, isPaid: true } }),
                 db.session.findMany({ where: { createdAt: dateFilter, status: 'COMPLETED' } }),
@@ -1054,25 +1061,43 @@ export function setupIpcHandlers() {
                 db.debtPayment.findMany({ where: { createdAt: dateFilter } })
             ])
 
+            // Previous period data (for comparison)
+            const [prevOrders, prevSessions, prevExpenses, prevDebtPayments] = await Promise.all([
+                db.order.findMany({ where: { createdAt: prevDateFilter, isPaid: true } }),
+                db.session.findMany({ where: { createdAt: prevDateFilter, status: 'COMPLETED' } }),
+                db.expense.findMany({ where: { date: prevDateFilter } }),
+                db.debtPayment.findMany({ where: { createdAt: prevDateFilter } })
+            ])
+
+            // Current period calculations
             const revenueFromOrders = orders.reduce((sum: number, o: any) => sum + o.total, 0)
             const revenueFromSessions = sessions.reduce((sum: number, s: any) => sum + (s.cost || 0), 0)
             const revenueFromDebt = debtPayments.reduce((sum: number, p: any) => sum + p.amount, 0)
             const totalRevenue = revenueFromOrders + revenueFromSessions + revenueFromDebt
-
             const totalExpenses = expenses.reduce((sum: number, e: any) => sum + e.amount, 0)
+
+            // Previous period calculations
+            const prevRevenueFromOrders = prevOrders.reduce((sum: number, o: any) => sum + o.total, 0)
+            const prevRevenueFromSessions = prevSessions.reduce((sum: number, s: any) => sum + (s.cost || 0), 0)
+            const prevRevenueFromDebt = prevDebtPayments.reduce((sum: number, p: any) => sum + p.amount, 0)
+            const prevTotalRevenue = prevRevenueFromOrders + prevRevenueFromSessions + prevRevenueFromDebt
+            const prevTotalExpenses = prevExpenses.reduce((sum: number, e: any) => sum + e.amount, 0)
+            const prevProfit = prevTotalRevenue - prevTotalExpenses
+
+            // Delta calculations (percentage change)
+            const calcDelta = (curr: number, prev: number) => prev === 0 ? (curr > 0 ? 100 : 0) : Math.round(((curr - prev) / prev) * 100)
 
             // Group data for charts
             const revenueByDay: Record<string, number> = {}
             const expensesByDay: Record<string, number> = {}
 
-            // Helper to format date key
             const fmt = (d: Date) => d.toLocaleDateString('en-US', { month: 'short', day: 'numeric' })
 
-            // Initialize last 7 or 30 days
-            const daysToCover = period === 'daily' ? 1 : (period === 'weekly' ? 7 : 30)
+            // Initialize days in range
+            const dayMs = 86400000
+            const daysToCover = Math.max(1, Math.ceil(periodMs / dayMs))
             for (let i = 0; i < daysToCover; i++) {
-                const d = new Date()
-                d.setDate(d.getDate() - i)
+                const d = new Date(startDate.getTime() + i * dayMs)
                 const key = fmt(d)
                 revenueByDay[key] = 0
                 expensesByDay[key] = 0
@@ -1083,22 +1108,94 @@ export function setupIpcHandlers() {
             debtPayments.forEach((p: any) => { const k = fmt(p.createdAt); revenueByDay[k] = (revenueByDay[k] || 0) + p.amount })
             expenses.forEach((e: any) => { const k = fmt(e.date); expensesByDay[k] = (expensesByDay[k] || 0) + e.amount })
 
+            // Expense breakdown by category for P&L
+            const expensesByCategory: Record<string, number> = {}
+            expenses.forEach((e: any) => {
+                const cat = e.category || 'Other'
+                expensesByCategory[cat] = (expensesByCategory[cat] || 0) + e.amount
+            })
+
             return {
                 success: true,
                 stats: {
                     revenue: totalRevenue,
+                    revenueFromOrders,
+                    revenueFromSessions,
+                    revenueFromDebt,
                     expenses: totalExpenses,
                     profit: totalRevenue - totalExpenses,
                     ordersCount: orders.length,
                     sessionsCount: sessions.length,
-                    revenueByDay: Object.entries(revenueByDay).map(([date, amount]) => ({ date, amount })).reverse(),
-                    expensesByDay: Object.entries(expensesByDay).map(([date, amount]) => ({ date, amount })).reverse(),
-                    topProducts: [] // Logic to be added if needed, but keeping it simple for now
+                    revenueByDay: Object.entries(revenueByDay).map(([date, amount]) => ({ date, amount })),
+                    expensesByDay: Object.entries(expensesByDay).map(([date, amount]) => ({ date, amount })),
+                    expensesByCategory: Object.entries(expensesByCategory).map(([category, amount]) => ({ category, amount })),
+                    deltas: {
+                        revenue: calcDelta(totalRevenue, prevTotalRevenue),
+                        expenses: calcDelta(totalExpenses, prevTotalExpenses),
+                        profit: calcDelta(totalRevenue - totalExpenses, prevProfit),
+                        orders: calcDelta(orders.length, prevOrders.length),
+                        sessions: calcDelta(sessions.length, prevSessions.length),
+                    }
                 }
             }
         } catch (error) {
             console.error('Financial stats error:', error)
             return { success: false, error: 'Failed to fetch financial stats' }
+        }
+    })
+
+    ipcMain.handle('reports:getStaffPerformance', async (_, options: { from: string; to: string }) => {
+        try {
+            const startDate = new Date(options.from)
+            startDate.setHours(0, 0, 0, 0)
+            const endDate = new Date(options.to)
+            endDate.setHours(23, 59, 59, 999)
+            const dateFilter = { gte: startDate, lte: endDate }
+
+            // Get all staff/owner users
+            const staffUsers = await db.user.findMany({
+                where: { role: { in: ['OWNER', 'STAFF'] } },
+                select: { id: true, name: true, role: true }
+            })
+
+            const staffStats = await Promise.all(staffUsers.map(async (user: any) => {
+                // Orders processed by this staff
+                const orders = await db.order.findMany({
+                    where: { staffId: user.id, createdAt: dateFilter }
+                })
+                const ordersCount = orders.length
+                const ordersRevenue = orders.reduce((sum: number, o: any) => sum + o.total, 0)
+                const cashRevenue = orders.filter((o: any) => o.isPaid).reduce((sum: number, o: any) => sum + o.total, 0)
+
+                // Shifts worked
+                const shifts = await db.shift.findMany({
+                    where: { userId: user.id, startTime: dateFilter }
+                })
+                const shiftMinutes = shifts.reduce((sum: number, s: any) => {
+                    const end = s.endTime ? new Date(s.endTime).getTime() : Date.now()
+                    const start = new Date(s.startTime).getTime()
+                    return sum + Math.floor((end - start) / 60000)
+                }, 0)
+
+                return {
+                    id: user.id,
+                    name: user.name,
+                    role: user.role,
+                    ordersCount,
+                    ordersRevenue,
+                    cashRevenue,
+                    shiftsCount: shifts.length,
+                    shiftMinutes,
+                }
+            }))
+
+            // Sort by revenue descending
+            staffStats.sort((a, b) => b.ordersRevenue - a.ordersRevenue)
+
+            return { success: true, staff: staffStats }
+        } catch (error) {
+            console.error('Staff performance error:', error)
+            return { success: false, error: 'Failed to fetch staff performance' }
         }
     })
 
