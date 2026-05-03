@@ -9,14 +9,7 @@ import {
     ResponsiveContainer
 } from 'recharts'
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "../ui/card"
-import {
-    Table,
-    TableBody,
-    TableCell,
-    TableHead,
-    TableHeader,
-    TableRow,
-} from "../ui/table"
+
 import { Loader2, TrendingUp, TrendingDown, Wallet, ShoppingBag, Gamepad2, ArrowUpRight, ArrowDownRight } from 'lucide-react'
 import { toast } from 'sonner'
 import { cn } from '@/lib/utils'
@@ -240,102 +233,115 @@ export function FinancialAnalytics({ from, to }: FinancialAnalyticsProps) {
                 </CardContent>
             </Card>
 
-            {/* P&L Summary Table */}
+            {/* P&L Statement */}
             <Card className="border-2 shadow-sm rounded-2xl overflow-hidden">
-                <CardHeader className="bg-muted/10 border-b px-6 py-4">
-                    <CardTitle className="text-sm font-black uppercase tracking-widest text-primary">
-                        Profit & Loss Summary
+                <CardHeader className="bg-muted/10 border-b px-6 py-4 flex flex-row items-center justify-between">
+                    <CardTitle className="text-sm font-black uppercase tracking-widest text-primary flex items-center gap-2">
+                        <Wallet className="h-4 w-4" /> Profit & Loss Statement
                     </CardTitle>
                 </CardHeader>
                 <CardContent className="p-0">
-                    <Table>
-                        <TableHeader className="bg-muted/30">
-                            <TableRow>
-                                <TableHead className="font-black text-xs uppercase tracking-wider w-[50%]">Category</TableHead>
-                                <TableHead className="font-black text-xs uppercase tracking-wider text-right">Amount (DH)</TableHead>
-                            </TableRow>
-                        </TableHeader>
-                        <TableBody>
-                            {/* Revenue Section */}
-                            <TableRow className="bg-emerald-500/[0.03] hover:bg-emerald-500/[0.06]">
-                                <TableCell className="font-black text-emerald-600 text-sm">
-                                    <div className="flex items-center gap-2">
-                                        <div className="w-1.5 h-6 bg-emerald-500 rounded-full" />
-                                        Revenue from Orders
-                                    </div>
-                                </TableCell>
-                                <TableCell className="text-right font-black text-emerald-600">
-                                    +{(stats?.revenueFromOrders || 0).toFixed(2)}
-                                </TableCell>
-                            </TableRow>
-                            <TableRow className="bg-emerald-500/[0.03] hover:bg-emerald-500/[0.06]">
-                                <TableCell className="font-black text-emerald-600 text-sm">
-                                    <div className="flex items-center gap-2">
-                                        <div className="w-1.5 h-6 bg-emerald-500 rounded-full" />
-                                        Revenue from Sessions
-                                    </div>
-                                </TableCell>
-                                <TableCell className="text-right font-black text-emerald-600">
-                                    +{(stats?.revenueFromSessions || 0).toFixed(2)}
-                                </TableCell>
-                            </TableRow>
-                            <TableRow className="bg-emerald-500/[0.03] hover:bg-emerald-500/[0.06]">
-                                <TableCell className="font-black text-emerald-600 text-sm">
-                                    <div className="flex items-center gap-2">
-                                        <div className="w-1.5 h-6 bg-emerald-500 rounded-full" />
-                                        Debt Payments Collected
-                                    </div>
-                                </TableCell>
-                                <TableCell className="text-right font-black text-emerald-600">
-                                    +{(stats?.revenueFromDebt || 0).toFixed(2)}
-                                </TableCell>
-                            </TableRow>
-
-                            {/* Expense Section */}
-                            {stats?.expensesByCategory?.map((exp: any) => (
-                                <TableRow key={exp.category} className="bg-destructive/[0.02] hover:bg-destructive/[0.05]">
-                                    <TableCell className="font-bold text-destructive text-sm">
-                                        <div className="flex items-center gap-2">
-                                            <div className="w-1.5 h-6 bg-destructive rounded-full" />
-                                            {exp.category}
+                    <div className="flex flex-col md:flex-row">
+                        {/* Revenue Column */}
+                        <div className="flex-1 p-6 md:border-r border-b md:border-b-0">
+                            <div className="flex items-center justify-between mb-4 pb-2 border-b">
+                                <span className="font-black text-xs uppercase tracking-wider text-muted-foreground">Revenue Sources</span>
+                                <span className="font-black text-xs uppercase tracking-wider text-muted-foreground text-right">Amount (DH)</span>
+                            </div>
+                            <div className="space-y-4">
+                                <div className="flex justify-between items-center group">
+                                    <div className="flex items-center gap-3">
+                                        <div className="w-8 h-8 rounded-xl bg-emerald-500/10 flex items-center justify-center">
+                                            <ShoppingBag className="h-4 w-4 text-emerald-600" />
                                         </div>
-                                    </TableCell>
-                                    <TableCell className="text-right font-black text-destructive">
-                                        -{exp.amount.toFixed(2)}
-                                    </TableCell>
-                                </TableRow>
-                            ))}
+                                        <span className="font-bold text-sm text-foreground/80 group-hover:text-foreground transition-colors">Orders</span>
+                                    </div>
+                                    <span className="font-black text-emerald-600">+{(stats?.revenueFromOrders || 0).toFixed(2)}</span>
+                                </div>
+                                <div className="flex justify-between items-center group">
+                                    <div className="flex items-center gap-3">
+                                        <div className="w-8 h-8 rounded-xl bg-emerald-500/10 flex items-center justify-center">
+                                            <Gamepad2 className="h-4 w-4 text-emerald-600" />
+                                        </div>
+                                        <span className="font-bold text-sm text-foreground/80 group-hover:text-foreground transition-colors">Sessions</span>
+                                    </div>
+                                    <span className="font-black text-emerald-600">+{(stats?.revenueFromSessions || 0).toFixed(2)}</span>
+                                </div>
+                                <div className="flex justify-between items-center group">
+                                    <div className="flex items-center gap-3">
+                                        <div className="w-8 h-8 rounded-xl bg-emerald-500/10 flex items-center justify-center">
+                                            <Wallet className="h-4 w-4 text-emerald-600" />
+                                        </div>
+                                        <span className="font-bold text-sm text-foreground/80 group-hover:text-foreground transition-colors">Debt Payments</span>
+                                    </div>
+                                    <span className="font-black text-emerald-600">+{(stats?.revenueFromDebt || 0).toFixed(2)}</span>
+                                </div>
+                            </div>
+                            <div className="mt-6 pt-4 border-t flex justify-between items-center bg-emerald-500/5 -mx-6 -mb-6 p-6">
+                                <span className="font-black text-base uppercase tracking-tight text-emerald-700 dark:text-emerald-500">Total Revenue</span>
+                                <span className="text-xl font-black text-emerald-600">+{(stats?.revenue || 0).toFixed(2)} DH</span>
+                            </div>
+                        </div>
 
-                            {/* Totals */}
-                            <TableRow className="border-t-2 bg-muted/20">
-                                <TableCell className="font-black text-base py-4">
-                                    TOTAL REVENUE
-                                </TableCell>
-                                <TableCell className="text-right font-black text-base text-emerald-600 py-4">
-                                    +{(stats?.revenue || 0).toFixed(2)} DH
-                                </TableCell>
-                            </TableRow>
-                            <TableRow className="bg-muted/20">
-                                <TableCell className="font-black text-base py-4">
-                                    TOTAL EXPENSES
-                                </TableCell>
-                                <TableCell className="text-right font-black text-base text-destructive py-4">
-                                    -{(stats?.expenses || 0).toFixed(2)} DH
-                                </TableCell>
-                            </TableRow>
-                            <TableRow className="border-t-4 border-primary/20 bg-primary/[0.03]">
-                                <TableCell className="font-black text-lg py-5 text-primary">
-                                    NET PROFIT
-                                </TableCell>
-                                <TableCell className={cn(
-                                    "text-right font-black text-xl py-5",
-                                    (stats?.profit || 0) >= 0 ? "text-primary" : "text-destructive"
-                                )}>
-                                    {(stats?.profit || 0).toFixed(2)} DH
-                                </TableCell>
-                            </TableRow>
-                        </TableBody>
-                    </Table>
+                        {/* Expenses Column */}
+                        <div className="flex-1 p-6 bg-muted/5 md:bg-transparent flex flex-col">
+                            <div className="flex items-center justify-between mb-4 pb-2 border-b">
+                                <span className="font-black text-xs uppercase tracking-wider text-muted-foreground">Operating Expenses</span>
+                                <span className="font-black text-xs uppercase tracking-wider text-muted-foreground text-right">Amount (DH)</span>
+                            </div>
+                            <div className="space-y-4 flex-1">
+                                {(!stats?.expensesByCategory || stats.expensesByCategory.length === 0) ? (
+                                    <div className="text-sm font-medium text-muted-foreground py-2 italic text-center mt-4">No expenses recorded for this period.</div>
+                                ) : (
+                                    stats?.expensesByCategory?.map((exp: any) => (
+                                        <div key={exp.category} className="flex justify-between items-center group">
+                                            <div className="flex items-center gap-3">
+                                                <div className="w-8 h-8 rounded-xl bg-destructive/10 flex items-center justify-center">
+                                                    <TrendingDown className="h-4 w-4 text-destructive" />
+                                                </div>
+                                                <span className="font-bold text-sm text-foreground/80 group-hover:text-foreground transition-colors">{exp.category}</span>
+                                            </div>
+                                            <span className="font-black text-destructive">-{exp.amount.toFixed(2)}</span>
+                                        </div>
+                                    ))
+                                )}
+                            </div>
+                            <div className="mt-6 pt-4 border-t flex justify-between items-center bg-destructive/5 -mx-6 -mb-6 p-6">
+                                <span className="font-black text-base uppercase tracking-tight text-destructive">Total Expenses</span>
+                                <span className="text-xl font-black text-destructive">-{(stats?.expenses || 0).toFixed(2)} DH</span>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    {/* Bottom Line Summary */}
+                    <div className={cn(
+                        "p-6 md:p-8 border-t-4 flex flex-col md:flex-row justify-between items-center gap-4 transition-colors",
+                        (stats?.profit || 0) >= 0 ? "bg-primary/[0.04] border-primary/20" : "bg-destructive/[0.04] border-destructive/20"
+                    )}>
+                        <div className="flex items-center gap-4">
+                            <div className={cn(
+                                "w-12 h-12 rounded-2xl flex items-center justify-center shadow-inner",
+                                (stats?.profit || 0) >= 0 ? "bg-primary/20 text-primary" : "bg-destructive/20 text-destructive"
+                            )}>
+                                {(stats?.profit || 0) >= 0 ? <TrendingUp className="h-6 w-6" /> : <TrendingDown className="h-6 w-6" />}
+                            </div>
+                            <div>
+                                <span className="block font-black text-sm uppercase tracking-widest text-muted-foreground">Net Position</span>
+                                <span className={cn("block text-2xl font-black tracking-tight", (stats?.profit || 0) >= 0 ? "text-primary" : "text-destructive")}>
+                                    {(stats?.profit || 0) >= 0 ? 'PROFIT' : 'LOSS'}
+                                </span>
+                            </div>
+                        </div>
+                        <div className="text-center md:text-right">
+                            <span className="block font-bold text-xs uppercase tracking-widest text-muted-foreground mb-1">Total Net Income</span>
+                            <span className={cn(
+                                "text-4xl font-black tracking-tighter drop-shadow-sm",
+                                (stats?.profit || 0) >= 0 ? "text-primary" : "text-destructive"
+                            )}>
+                                {(stats?.profit || 0).toFixed(2)} <span className="text-xl font-bold opacity-70">DH</span>
+                            </span>
+                        </div>
+                    </div>
                 </CardContent>
             </Card>
         </div>
