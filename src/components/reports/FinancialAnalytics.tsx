@@ -87,7 +87,7 @@ export function FinancialAnalytics({ from, to }: FinancialAnalyticsProps) {
     }))
     const revenueChartColor = '#22c55e'
     const expenseChartColor = '#f43f5e'
-    const axisTickColor = '#ffffff'
+    const axisTickColor = '#94a3b8'
     const totalRevenue = stats?.revenue || 0
     const totalExpenses = stats?.expenses || 0
     const profit = stats?.profit || 0

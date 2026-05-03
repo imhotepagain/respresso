@@ -124,7 +124,7 @@ export function AnalyticsCharts({ data }: AnalyticsProps) {
                                         layout="horizontal"
                                         verticalAlign="bottom"
                                         align="center"
-                                        formatter={(value) => <span className="text-[10px] uppercase font-bold text-slate-200">{value}</span>}
+                                        formatter={(value) => <span className="text-[10px] uppercase font-bold text-muted-foreground">{value}</span>}
                                     />
                                 </PieChart>
                             </ResponsiveContainer>
@@ -155,7 +155,7 @@ export function AnalyticsCharts({ data }: AnalyticsProps) {
                                     dataKey="name"
                                     type="category"
                                     width={140}
-                                    tick={{ fontSize: 12, fontWeight: 800, fill: '#ffffff' }}
+                                    tick={{ fontSize: 12, fontWeight: 800, fill: '#94a3b8' }}
                                     axisLine={false}
                                     tickLine={false}
                                 />
@@ -174,7 +174,7 @@ export function AnalyticsCharts({ data }: AnalyticsProps) {
                                     name="Units Sold"
                                     fill="#3b82f6"
                                     radius={[0, 8, 8, 0]}
-                                    label={{ position: 'right', fontSize: 12, fontWeight: 900, fill: '#ffffff' }}
+                                    label={{ position: 'right', fontSize: 12, fontWeight: 900, fill: '#94a3b8' }}
                                 />
                             </BarChart>
                         </ResponsiveContainer>
