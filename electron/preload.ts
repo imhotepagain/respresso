@@ -13,6 +13,7 @@ const api: ElectronAPI = {
   getUserById: (id) => ipcRenderer.invoke('users:getById', id),
   updateUser: (id, data) => ipcRenderer.invoke('users:update', { id, data }),
   deleteUser: (id) => ipcRenderer.invoke('users:delete', id),
+  resetUserPassword: (userId, newPassword) => ipcRenderer.invoke('users:resetPassword', { userId, newPassword }),
 
   // Products
   getAllProducts: () => ipcRenderer.invoke('products:getAll'),
@@ -60,6 +61,7 @@ const api: ElectronAPI = {
 
   // Dashboard
   getDashboardStats: () => ipcRenderer.invoke('dashboard:getStats'),
+  getDashboardTrend: () => ipcRenderer.invoke('dashboard:getTodayTrend'),
 
   // Backups
   listBackups: () => ipcRenderer.invoke('backups:list'),

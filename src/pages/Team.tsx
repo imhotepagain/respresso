@@ -17,7 +17,8 @@ import {
     UserPlus,
     Loader2,
     Lock,
-    Key
+    Key,
+    KeyRound
 } from 'lucide-react'
 import {
     Dialog,
@@ -33,6 +34,7 @@ import { Label } from "@/components/ui/label"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
 import { useAuth } from "@/providers/AuthProvider"
 import { cn } from "@/lib/utils"
+import { toast } from 'sonner'
 
 export const Team: React.FC = () => {
     const { user: currentUser } = useAuth()
@@ -46,6 +48,13 @@ export const Team: React.FC = () => {
         password: "",
         role: "STAFF"
     })
+
+    // Password reset states
+    const [isResetOpen, setIsResetOpen] = useState(false)
+    const [resetTarget, setResetTarget] = useState<User | null>(null)
+    const [newPassword, setNewPassword] = useState("")
+    const [confirmPassword, setConfirmPassword] = useState("")
+    const [resetLoading, setResetLoading] = useState(false)
 
     const fetchUsers = async () => {
         setLoading(true)
@@ -90,6 +99,32 @@ export const Team: React.FC = () => {
             fetchUsers()
         } else {
             alert("Error: " + result.error)
+        }
+    }
+
+    const handleResetPassword = async () => {
+        if (!resetTarget || !newPassword) return
+        if (newPassword.length < 4) {
+            toast.error('Password must be at least 4 characters')
+            return
+        }
+        if (newPassword !== confirmPassword) {
+            toast.error('Passwords do not match')
+            return
+        }
+
+        setResetLoading(true)
+        const result = await window.api.resetUserPassword(resetTarget.id, newPassword)
+        setResetLoading(false)
+
+        if (result.success) {
+            toast.success(`Password reset for ${resetTarget.name}`)
+            setIsResetOpen(false)
+            setResetTarget(null)
+            setNewPassword("")
+            setConfirmPassword("")
+        } else {
+            toast.error(result.error || 'Failed to reset password')
         }
     }
 
@@ -212,7 +247,20 @@ export const Team: React.FC = () => {
                                 </TableCell>
                                 <TableCell className="text-right">
                                     {user.id !== currentUser?.id && (
-                                        <div className="opacity-0 group-hover:opacity-100 transition-opacity">
+                                        <div className="opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-end gap-1">
+                                            <Button
+                                                variant="ghost"
+                                                size="icon"
+                                                className="h-10 w-10 text-primary hover:bg-primary/10 rounded-full"
+                                                onClick={() => {
+                                                    setResetTarget(user)
+                                                    setNewPassword("")
+                                                    setConfirmPassword("")
+                                                    setIsResetOpen(true)
+                                                }}
+                                            >
+                                                <KeyRound className="h-5 w-5" />
+                                            </Button>
                                             <Button
                                                 variant="ghost"
                                                 size="icon"
@@ -243,6 +291,56 @@ export const Team: React.FC = () => {
                     </p>
                 </div>
             </div>
+
+            {/* Reset Password Dialog */}
+            <Dialog open={isResetOpen} onOpenChange={setIsResetOpen}>
+                <DialogContent className="sm:max-w-[400px]">
+                    <DialogHeader>
+                        <DialogTitle className="flex items-center gap-2">
+                            <KeyRound className="h-5 w-5 text-primary" />
+                            Reset Password
+                        </DialogTitle>
+                        <DialogDescription>
+                            Set a new password for <span className="font-bold text-foreground">{resetTarget?.name}</span>.
+                            They will need to use this new password on their next login.
+                        </DialogDescription>
+                    </DialogHeader>
+                    <div className="grid gap-4 py-4">
+                        <div className="grid gap-2">
+                            <Label htmlFor="newPassword">New Password</Label>
+                            <Input
+                                id="newPassword"
+                                type="password"
+                                placeholder="••••••••"
+                                value={newPassword}
+                                onChange={e => setNewPassword(e.target.value)}
+                                autoFocus
+                            />
+                        </div>
+                        <div className="grid gap-2">
+                            <Label htmlFor="confirmPassword">Confirm Password</Label>
+                            <Input
+                                id="confirmPassword"
+                                type="password"
+                                placeholder="••••••••"
+                                value={confirmPassword}
+                                onChange={e => setConfirmPassword(e.target.value)}
+                            />
+                        </div>
+                    </div>
+                    <DialogFooter>
+                        <Button variant="outline" onClick={() => setIsResetOpen(false)}>Cancel</Button>
+                        <Button
+                            onClick={handleResetPassword}
+                            disabled={resetLoading || !newPassword || !confirmPassword}
+                            className="font-bold"
+                        >
+                            {resetLoading ? <Loader2 className="h-4 w-4 animate-spin mr-2" /> : <KeyRound className="h-4 w-4 mr-2" />}
+                            Reset Password
+                        </Button>
+                    </DialogFooter>
+                </DialogContent>
+            </Dialog>
         </div>
     )
 }

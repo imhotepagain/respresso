@@ -154,6 +154,7 @@ export interface ElectronAPI {
     getUserById: (id: string) => Promise<{ success: boolean; user?: User; error?: string }>
     updateUser: (id: string, data: Partial<User>) => Promise<{ success: boolean; user?: User; error?: string }>
     deleteUser: (id: string) => Promise<{ success: boolean; error?: string }>
+    resetUserPassword: (userId: string, newPassword: string) => Promise<{ success: boolean; error?: string }>
 
     // Products
     getAllProducts: () => Promise<{ success: boolean; products?: Product[]; error?: string }>
@@ -249,6 +250,7 @@ export interface ElectronAPI {
 
     // Dashboard
     getDashboardStats: () => Promise<{ success: boolean; stats?: { userCount: number; activeSessions: number; productCount: number; totalDebt: number; lowStock?: any[] }; error?: string }>
+    getDashboardTrend: () => Promise<{ success: boolean; trend: { hour: string; cash: number; debt: number; sessions: number }[] }>
 
     // Backups
     listBackups: () => Promise<Array<{ name: string; path: string; createdAt: Date; size: number }>>

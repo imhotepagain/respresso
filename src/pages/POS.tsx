@@ -106,7 +106,9 @@ export const POS: React.FC = () => {
             const printerName = localStorage.getItem('thermal-printer') || ''
             if (printerName) {
                 await window.api.printReceipt({
-                    shopName: 'GLISSA POS',
+                    shopName: localStorage.getItem('shop-name') || 'GLISSA',
+                    address: localStorage.getItem('shop-address') || undefined,
+                    footer: localStorage.getItem('shop-footer') || undefined,
                     order: result.order,
                     printerName
                 })

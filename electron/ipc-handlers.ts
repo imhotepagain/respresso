@@ -134,6 +134,20 @@ export function setupIpcHandlers() {
         }
     })
 
+    ipcMain.handle('users:resetPassword', async (_, { userId, newPassword }: { userId: string; newPassword: string }) => {
+        try {
+            const hashedPassword = await bcrypt.hash(newPassword, 10)
+            await db.user.update({
+                where: { id: userId },
+                data: { password: hashedPassword },
+            })
+            return { success: true }
+        } catch (error) {
+            console.error('Reset password error:', error)
+            return { success: false, error: 'Failed to reset password' }
+        }
+    })
+
     // ==================== PRODUCTS ====================
 
     ipcMain.handle('products:getAll', async () => {
@@ -855,6 +869,51 @@ export function setupIpcHandlers() {
         } catch (error) {
             console.error('Get dashboard stats error:', error)
             return { success: false, error: 'Failed to fetch dashboard stats' }
+        }
+    })
+
+    ipcMain.handle('dashboard:getTodayTrend', async () => {
+        try {
+            const today = new Date()
+            today.setHours(0, 0, 0, 0)
+            const tomorrow = new Date(today)
+            tomorrow.setDate(tomorrow.getDate() + 1)
+
+            const dateFilter = { gte: today, lt: tomorrow }
+
+            const [orders, sessions] = await Promise.all([
+                db.order.findMany({ where: { createdAt: dateFilter } }),
+                db.session.findMany({ where: { createdAt: dateFilter, status: 'COMPLETED' } }),
+            ])
+
+            // Build hourly buckets from 8:00 to 23:00
+            const hours: { hour: string; cash: number; debt: number; sessions: number }[] = []
+            for (let h = 8; h <= 23; h++) {
+                hours.push({ hour: `${h.toString().padStart(2, '0')}:00`, cash: 0, debt: 0, sessions: 0 })
+            }
+
+            orders.forEach((order: any) => {
+                const h = new Date(order.createdAt).getHours()
+                const bucket = hours.find(b => parseInt(b.hour) === h)
+                if (bucket) {
+                    if (order.isPaid) bucket.cash += order.total
+                    else bucket.debt += order.total
+                }
+            })
+
+            sessions.forEach((session: any) => {
+                const h = new Date(session.createdAt).getHours()
+                const bucket = hours.find(b => parseInt(b.hour) === h)
+                if (bucket) {
+                    bucket.cash += session.cost || 0
+                    bucket.sessions += 1
+                }
+            })
+
+            return { success: true, trend: hours }
+        } catch (error) {
+            console.error('Get today trend error:', error)
+            return { success: false, trend: [] }
         }
     })
 

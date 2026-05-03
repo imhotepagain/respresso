@@ -9,7 +9,9 @@ import {
     CheckCircle2,
     Calendar,
     Printer,
-    RefreshCw
+    RefreshCw,
+    Store,
+    Save
 } from 'lucide-react'
 import { Button } from '../components/ui/button'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '../components/ui/card'
@@ -29,7 +31,10 @@ import {
     SelectTrigger,
     SelectValue,
 } from "../components/ui/select"
+import { Input } from '../components/ui/input'
+import { Label } from '../components/ui/label'
 import { format } from 'date-fns'
+import { toast } from 'sonner'
 
 interface Backup {
     name: string
@@ -44,6 +49,11 @@ export const Settings: React.FC = () => {
     const [selectedPrinter, setSelectedPrinter] = useState<string>(localStorage.getItem('thermal-printer') || '')
     const [isLoading, setIsLoading] = useState(false)
     const [message, setMessage] = useState<{ type: 'success' | 'error', text: string } | null>(null)
+
+    // Shop Identity
+    const [shopName, setShopName] = useState(localStorage.getItem('shop-name') || 'GLISSA')
+    const [shopAddress, setShopAddress] = useState(localStorage.getItem('shop-address') || '')
+    const [shopFooter, setShopFooter] = useState(localStorage.getItem('shop-footer') || 'Thank you for your visit!')
 
     const fetchBackups = async () => {
         setIsLoading(true)
@@ -161,6 +171,62 @@ export const Settings: React.FC = () => {
 
             <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
                 <div className="md:col-span-1 space-y-6">
+                    {/* Shop Identity Card */}
+                    <Card className="h-fit">
+                        <CardHeader>
+                            <CardTitle className="flex items-center gap-2">
+                                <Store className="h-5 w-5 text-primary" />
+                                Shop Identity
+                            </CardTitle>
+                            <CardDescription>
+                                Customize your brand on receipts and throughout the system.
+                            </CardDescription>
+                        </CardHeader>
+                        <CardContent className="space-y-4">
+                            <div className="space-y-2">
+                                <Label htmlFor="shopName" className="text-sm font-medium">Shop Name</Label>
+                                <Input
+                                    id="shopName"
+                                    placeholder="GLISSA"
+                                    value={shopName}
+                                    onChange={e => setShopName(e.target.value)}
+                                />
+                            </div>
+                            <div className="space-y-2">
+                                <Label htmlFor="shopAddress" className="text-sm font-medium">Address (optional)</Label>
+                                <Input
+                                    id="shopAddress"
+                                    placeholder="123 Main Street, City"
+                                    value={shopAddress}
+                                    onChange={e => setShopAddress(e.target.value)}
+                                />
+                            </div>
+                            <div className="space-y-2">
+                                <Label htmlFor="shopFooter" className="text-sm font-medium">Receipt Footer</Label>
+                                <Input
+                                    id="shopFooter"
+                                    placeholder="Thank you for your visit!"
+                                    value={shopFooter}
+                                    onChange={e => setShopFooter(e.target.value)}
+                                />
+                            </div>
+                            <div className="pt-2">
+                                <Button
+                                    className="w-full font-bold"
+                                    onClick={() => {
+                                        localStorage.setItem('shop-name', shopName)
+                                        localStorage.setItem('shop-address', shopAddress)
+                                        localStorage.setItem('shop-footer', shopFooter)
+                                        toast.success('Shop identity saved!')
+                                    }}
+                                >
+                                    <Save className="mr-2 h-4 w-4" />
+                                    Save Changes
+                                </Button>
+                            </div>
+                        </CardContent>
+                    </Card>
+
                     <Card className="h-fit">
                         <CardHeader>
                             <CardTitle className="flex items-center gap-2">

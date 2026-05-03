@@ -122,9 +122,94 @@ function AppContent() {
 
 import { ThemeProvider } from './providers/ThemeProvider'
 
+function SplashScreen({ onFinish }: { onFinish: () => void }) {
+    const [fadeOut, setFadeOut] = useState(false)
+
+    useEffect(() => {
+        const fadeTimer = setTimeout(() => setFadeOut(true), 1800)
+        const doneTimer = setTimeout(() => onFinish(), 2300)
+        return () => {
+            clearTimeout(fadeTimer)
+            clearTimeout(doneTimer)
+        }
+    }, [onFinish])
+
+    return (
+        <div
+            className={`fixed inset-0 z-[9999] flex flex-col items-center justify-center bg-[#0a0a0a] text-white overflow-hidden transition-opacity duration-500 ${fadeOut ? 'opacity-0' : 'opacity-100'}`}
+        >
+            {/* Ambient background glow */}
+            <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[600px] h-[600px] rounded-full blur-[150px] pointer-events-none"
+                style={{
+                    background: 'radial-gradient(circle, hsl(var(--primary) / 0.25) 0%, transparent 70%)',
+                    animation: 'pulse 2s ease-in-out infinite'
+                }}
+            />
+
+            {/* Secondary orbs */}
+            <div className="absolute top-1/4 left-1/4 w-[200px] h-[200px] bg-emerald-500/10 rounded-full blur-[80px] pointer-events-none"
+                style={{ animation: 'pulse 3s ease-in-out infinite 0.5s' }}
+            />
+            <div className="absolute bottom-1/4 right-1/4 w-[200px] h-[200px] bg-blue-500/10 rounded-full blur-[80px] pointer-events-none"
+                style={{ animation: 'pulse 3s ease-in-out infinite 1s' }}
+            />
+
+            <div className="z-10 flex flex-col items-center"
+                style={{ animation: 'splashZoomIn 0.8s cubic-bezier(0.16, 1, 0.3, 1) forwards' }}
+            >
+                {/* Logo with glow ring */}
+                <div className="relative mb-8">
+                    <div className="absolute -inset-6 bg-primary/20 rounded-full blur-2xl animate-pulse" />
+                    <div className="absolute -inset-3 border-2 border-primary/10 rounded-full animate-ping" style={{ animationDuration: '2s' }} />
+                    <div className="relative bg-primary/10 p-6 rounded-full border border-primary/20 backdrop-blur-sm">
+                        <Gamepad2 className="h-16 w-16 text-primary drop-shadow-[0_0_20px_hsl(var(--primary)/0.6)]" />
+                    </div>
+                </div>
+
+                {/* Brand name */}
+                <h1 className="text-6xl font-black tracking-[0.25em] mb-3 bg-gradient-to-b from-white to-white/60 bg-clip-text text-transparent">
+                    GLISSA
+                </h1>
+
+                {/* Tagline with delayed fade-in */}
+                <p className="text-sm font-bold tracking-[0.3em] text-primary/70 uppercase"
+                    style={{ animation: 'splashFadeIn 0.6s ease-out 0.4s both' }}
+                >
+                    Premium Gaming & Coffee
+                </p>
+
+                {/* Loading bar */}
+                <div className="mt-12 w-48 h-0.5 bg-white/5 rounded-full overflow-hidden">
+                    <div className="h-full bg-gradient-to-r from-primary/60 to-primary rounded-full"
+                        style={{ animation: 'splashLoadBar 1.8s ease-in-out forwards' }}
+                    />
+                </div>
+            </div>
+
+            <style>{`
+                @keyframes splashZoomIn {
+                    from { opacity: 0; transform: scale(0.8); }
+                    to { opacity: 1; transform: scale(1); }
+                }
+                @keyframes splashFadeIn {
+                    from { opacity: 0; transform: translateY(8px); }
+                    to { opacity: 1; transform: translateY(0); }
+                }
+                @keyframes splashLoadBar {
+                    from { width: 0%; }
+                    to { width: 100%; }
+                }
+            `}</style>
+        </div>
+    )
+}
+
 function App() {
+    const [showSplash, setShowSplash] = useState(true)
+
     return (
         <ThemeProvider defaultTheme="dark" storageKey="respresso-theme">
+            {showSplash && <SplashScreen onFinish={() => setShowSplash(false)} />}
             <AuthProvider>
                 <AppContent />
                 <Toaster position="top-right" expand={false} richColors closeButton theme="dark" />

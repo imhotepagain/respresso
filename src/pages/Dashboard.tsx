@@ -1,7 +1,20 @@
 import React, { useEffect, useState } from 'react'
 import { Card, CardContent, CardHeader, CardTitle } from '../components/ui/card'
-import { Users, DollarSign, Gamepad2, Package, RefreshCw } from 'lucide-react'
+import { Users, DollarSign, Gamepad2, Package, RefreshCw, TrendingUp } from 'lucide-react'
 import { Button } from '../components/ui/button'
+import { cn } from '../lib/utils'
+import {
+    AreaChart,
+    Area,
+    XAxis,
+    YAxis,
+    CartesianGrid,
+    Tooltip,
+    ResponsiveContainer,
+    Legend
+} from 'recharts'
+
+type TrendPoint = { hour: string; cash: number; debt: number; sessions: number }
 
 export const Dashboard: React.FC = () => {
     const [stats, setStats] = useState<{
@@ -11,13 +24,20 @@ export const Dashboard: React.FC = () => {
         totalDebt: number
         lowStock: any[]
     } | null>(null)
+    const [trend, setTrend] = useState<TrendPoint[]>([])
     const [loading, setLoading] = useState(true)
 
     const fetchStats = async () => {
         setLoading(true)
-        const result = await window.api.getDashboardStats()
-        if (result.success && result.stats) {
-            setStats(result.stats as any)
+        const [statsResult, trendResult] = await Promise.all([
+            window.api.getDashboardStats(),
+            window.api.getDashboardTrend()
+        ])
+        if (statsResult.success && statsResult.stats) {
+            setStats(statsResult.stats as any)
+        }
+        if (trendResult.success && trendResult.trend) {
+            setTrend(trendResult.trend)
         }
         setLoading(false)
     }
@@ -33,6 +53,8 @@ export const Dashboard: React.FC = () => {
             </div>
         )
     }
+
+    const todayTotal = trend.reduce((sum, p) => sum + p.cash + p.debt, 0)
 
     return (
         <div className="space-y-6">
@@ -91,12 +113,82 @@ export const Dashboard: React.FC = () => {
             </div>
 
             <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-7">
-                <Card className="col-span-4 border-2 shadow-none">
+                <Card className="col-span-4 border-2 shadow-none overflow-hidden">
                     <CardHeader className="bg-muted/30 border-b">
-                        <CardTitle className="text-sm font-bold">Quick Activity</CardTitle>
+                        <div className="flex items-center justify-between">
+                            <CardTitle className="text-sm font-bold flex items-center gap-2">
+                                <TrendingUp className="h-4 w-4 text-primary" />
+                                Today's Revenue
+                            </CardTitle>
+                            <div className="text-right">
+                                <div className="text-2xl font-black text-primary">{todayTotal.toFixed(2)} DH</div>
+                                <div className="text-[10px] font-bold text-muted-foreground uppercase tracking-widest">Total Today</div>
+                            </div>
+                        </div>
                     </CardHeader>
-                    <CardContent className="flex items-center justify-center h-64">
-                        <p className="text-muted-foreground text-sm italic">Daily performance graph will be here.</p>
+                    <CardContent className="h-[280px] pt-6 pr-2">
+                        <ResponsiveContainer width="100%" height="100%">
+                            <AreaChart data={trend} margin={{ top: 5, right: 10, left: -10, bottom: 0 }}>
+                                <defs>
+                                    <linearGradient id="cashGradient" x1="0" y1="0" x2="0" y2="1">
+                                        <stop offset="5%" stopColor="#10b981" stopOpacity={0.3} />
+                                        <stop offset="95%" stopColor="#10b981" stopOpacity={0} />
+                                    </linearGradient>
+                                    <linearGradient id="debtGradient" x1="0" y1="0" x2="0" y2="1">
+                                        <stop offset="5%" stopColor="#f59e0b" stopOpacity={0.3} />
+                                        <stop offset="95%" stopColor="#f59e0b" stopOpacity={0} />
+                                    </linearGradient>
+                                </defs>
+                                <CartesianGrid strokeDasharray="4 4" vertical={false} stroke="hsl(var(--border))" opacity={0.4} />
+                                <XAxis
+                                    dataKey="hour"
+                                    tick={{ fontSize: 10, fontWeight: 600, fill: '#94a3b8' }}
+                                    axisLine={false}
+                                    tickLine={false}
+                                    dy={8}
+                                />
+                                <YAxis
+                                    tick={{ fontSize: 10, fontWeight: 600, fill: '#94a3b8' }}
+                                    axisLine={false}
+                                    tickLine={false}
+                                    dx={-5}
+                                    tickFormatter={(v) => `${v}`}
+                                />
+                                <Tooltip
+                                    contentStyle={{
+                                        backgroundColor: 'hsl(var(--card))',
+                                        borderColor: 'hsl(var(--border))',
+                                        borderRadius: '12px',
+                                        fontSize: '12px',
+                                        fontWeight: 'bold',
+                                        boxShadow: '0 10px 25px -5px rgb(0 0 0 / 0.2)'
+                                    }}
+                                    formatter={(value: number, name: string) => [`${value.toFixed(2)} DH`, name]}
+                                />
+                                <Legend
+                                    verticalAlign="top"
+                                    align="right"
+                                    iconType="circle"
+                                    wrapperStyle={{ fontSize: '11px', fontWeight: 'bold', paddingBottom: '10px' }}
+                                />
+                                <Area
+                                    type="monotone"
+                                    dataKey="cash"
+                                    name="Cash"
+                                    stroke="#10b981"
+                                    strokeWidth={2}
+                                    fill="url(#cashGradient)"
+                                />
+                                <Area
+                                    type="monotone"
+                                    dataKey="debt"
+                                    name="Debt"
+                                    stroke="#f59e0b"
+                                    strokeWidth={2}
+                                    fill="url(#debtGradient)"
+                                />
+                            </AreaChart>
+                        </ResponsiveContainer>
                     </CardContent>
                 </Card>
                 <Card className="col-span-3 border-2 shadow-none overflow-hidden">
@@ -127,6 +219,3 @@ export const Dashboard: React.FC = () => {
         </div>
     )
 }
-
-// Shorthand for cn helper if not imported
-import { cn } from '../lib/utils'
