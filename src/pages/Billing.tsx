@@ -8,7 +8,7 @@ import { useAuth } from '@/providers/AuthProvider'
 import { Expense } from '@/types/electron'
 import { format } from 'date-fns'
 import {
-    Loader2, Plus, Receipt, Trash2, TrendingDown,
+    Loader2, Plus, Banknote, Trash2, TrendingDown,
     Zap, Wifi, Home, ShoppingBag, Wrench,
     Megaphone, Users, MoreHorizontal, Calendar,
     ArrowDownRight, Sparkles
@@ -139,7 +139,7 @@ export function Billing() {
                             Financial Management
                         </div>
                         <h1 className="text-4xl md:text-5xl font-black tracking-tight flex items-center gap-4">
-                            <Receipt className="h-10 w-10 md:h-12 md:w-12 text-primary" />
+                            <Banknote className="h-10 w-10 md:h-12 md:w-12 text-primary" />
                             Bills & Expenses
                         </h1>
                         <p className="text-muted-foreground text-lg font-medium max-w-md">

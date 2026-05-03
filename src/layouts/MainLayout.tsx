@@ -24,7 +24,7 @@ import {
     Settings as SettingsIcon,
     Sun,
     Moon,
-    Receipt,
+    Banknote,
     Clock
 } from 'lucide-react'
 import { useTheme } from '../providers/ThemeProvider'
@@ -70,7 +70,7 @@ export const MainLayout: React.FC<{ children: React.ReactNode }> = ({ children }
         { href: '/inventory', label: 'Inventory', icon: Package },
         { href: '/debts', label: 'Clients & Debts', icon: Users },
         { href: '/sessions', label: 'PS Sessions', icon: Gamepad2 },
-        { href: '/billing', label: 'Bills & Expenses', icon: Receipt, adminOnly: true },
+        { href: '/billing', label: 'Bills & Expenses', icon: Banknote, adminOnly: true },
         { href: '/shifts', label: 'Shifts & Register', icon: Clock },
         { href: '/team', label: 'Team', icon: Shield, adminOnly: true },
         { href: '/settings', label: 'Settings', icon: SettingsIcon, adminOnly: true },
