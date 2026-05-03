@@ -125,7 +125,7 @@ export function Billing() {
     }
 
     return (
-        <div className="space-y-8 animate-in fade-in duration-700 max-w-7xl mx-auto pb-12">
+        <div className="space-y-8 animate-in fade-in duration-700 w-full px-6 pb-12">
             {/* Premium Header Section */}
             <div className="relative overflow-hidden rounded-3xl bg-card border shadow-2xl p-8 md:p-12">
                 {/* Background Decoration */}
