@@ -16,7 +16,7 @@ import {
 } from 'recharts'
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "../ui/card"
 
-import { Loader2, TrendingUp, TrendingDown, Wallet, ShoppingBag, Gamepad2, ArrowUpRight, ArrowDownRight, PieChart as PieChartIcon, BarChart as BarChartIcon } from 'lucide-react'
+import { Loader2, TrendingUp, TrendingDown, Wallet, ShoppingBag, Gamepad2, ArrowUpRight, ArrowDownRight, PieChart as PieChartIcon, Trophy } from 'lucide-react'
 import { toast } from 'sonner'
 import { cn } from '@/lib/utils'
 
@@ -284,15 +284,15 @@ export function FinancialAnalytics({ from, to }: FinancialAnalyticsProps) {
                 <Card className="border-2 shadow-sm overflow-hidden rounded-2xl">
                     <CardHeader className="bg-muted/10 border-b px-6 py-4">
                         <CardTitle className="text-sm font-black uppercase tracking-widest text-primary flex items-center gap-2">
-                            <BarChartIcon className="h-4 w-4" /> Category Comparison
+                            <Trophy className="h-4 w-4" /> Top Selling Products
                         </CardTitle>
                     </CardHeader>
                     <CardContent className="h-[300px] p-6">
                         <ResponsiveContainer width="100%" height="100%">
-                            <BarChart data={stats?.productComparison || []} margin={{ top: 10, right: 10, left: -20, bottom: 0 }}>
-                                <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="hsl(var(--border))" opacity={0.4} />
-                                <XAxis dataKey="name" tick={{ fontSize: 10, fontWeight: 700, fill: '#94a3b8' }} axisLine={false} tickLine={false} dy={8} />
-                                <YAxis tick={{ fontSize: 10, fontWeight: 700, fill: '#94a3b8' }} axisLine={false} tickLine={false} tickFormatter={(value) => `${value}`} />
+                            <BarChart layout="vertical" data={stats?.topProducts || []} margin={{ top: 10, right: 30, left: 10, bottom: 0 }}>
+                                <CartesianGrid strokeDasharray="3 3" horizontal={false} stroke="hsl(var(--border))" opacity={0.4} />
+                                <XAxis type="number" tick={{ fontSize: 10, fontWeight: 700, fill: '#94a3b8' }} axisLine={false} tickLine={false} />
+                                <YAxis dataKey="name" type="category" tick={{ fontSize: 10, fontWeight: 700, fill: '#94a3b8' }} width={90} axisLine={false} tickLine={false} />
                                 <Tooltip 
                                     cursor={{ fill: 'hsl(var(--muted))', opacity: 0.2 }}
                                     contentStyle={{
@@ -303,10 +303,10 @@ export function FinancialAnalytics({ from, to }: FinancialAnalyticsProps) {
                                         fontWeight: 'bold',
                                         boxShadow: '0 10px 25px -5px rgb(0 0 0 / 0.2)'
                                     }}
-                                    formatter={(value: any) => [`${Number(value).toFixed(2)} DH`, 'Revenue']}
+                                    formatter={(value: any, _name: any, props: any) => [`${value} sold (${Number(props.payload.revenue).toFixed(2)} DH)`, 'Volume']}
                                 />
-                                <Bar dataKey="value" radius={[4, 4, 0, 0]}>
-                                    {(stats?.productComparison || []).map((entry: any, index: number) => (
+                                <Bar dataKey="value" radius={[0, 4, 4, 0]} barSize={24}>
+                                    {(stats?.topProducts || []).map((entry: any, index: number) => (
                                         <Cell key={`cell-${index}`} fill={entry.fill} />
                                     ))}
                                 </Bar>

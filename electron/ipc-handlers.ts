@@ -1122,15 +1122,27 @@ export function setupIpcHandlers() {
             let snackRevenue = 0;
             let drinkRevenue = 0;
             let serviceRevenue = revenueFromSessions; // include session time
+            const productSalesMap: Record<string, { name: string, amount: number, qty: number }> = {};
 
             orders.forEach((o: any) => {
                 if (o.items) {
                     o.items.forEach((item: any) => {
                         const type = item.product?.type;
+                        const name = item.product?.name || 'Unknown';
                         const amount = item.price * item.quantity;
+                        const qty = item.quantity;
+
                         if (type === 'SNACK') snackRevenue += amount;
                         else if (type === 'DRINK') drinkRevenue += amount;
                         else if (type === 'SERVICE') serviceRevenue += amount;
+
+                        if (type !== 'SERVICE') {
+                            if (!productSalesMap[name]) {
+                                productSalesMap[name] = { name, amount: 0, qty: 0 };
+                            }
+                            productSalesMap[name].amount += amount;
+                            productSalesMap[name].qty += qty;
+                        }
                     });
                 }
             });
@@ -1140,6 +1152,16 @@ export function setupIpcHandlers() {
                 { name: 'Drinks', value: drinkRevenue, fill: '#3b82f6' },
                 { name: 'Services', value: serviceRevenue, fill: '#8b5cf6' }
             ];
+
+            const topProducts = Object.values(productSalesMap)
+                .sort((a, b) => b.qty - a.qty)
+                .slice(0, 5)
+                .map((p, index) => ({
+                    name: p.name,
+                    value: p.qty,
+                    revenue: p.amount,
+                    fill: ['#3b82f6', '#10b981', '#f59e0b', '#8b5cf6', '#ec4899'][index]
+                }));
 
             return {
                 success: true,
@@ -1156,6 +1178,7 @@ export function setupIpcHandlers() {
                     expensesByDay: Object.entries(expensesByDay).map(([date, amount]) => ({ date, amount })),
                     expensesByCategory: Object.entries(expensesByCategory).map(([category, amount]) => ({ category, amount })),
                     productComparison,
+                    topProducts,
                     deltas: {
                         revenue: calcDelta(totalRevenue, prevTotalRevenue),
                         expenses: calcDelta(totalExpenses, prevTotalExpenses),
