@@ -251,6 +251,10 @@ export function FinancialAnalytics({ from, to }: FinancialAnalyticsProps) {
                                     axisLine={false}
                                     tickLine={false}
                                     dy={8}
+                                    tickFormatter={(value) => {
+                                        const d = new Date(value);
+                                        return d.toLocaleDateString('en-US', { month: 'short', day: 'numeric' });
+                                    }}
                                 />
                                 <YAxis
                                     tick={{ fontSize: 10, fontWeight: 700, fill: axisTickColor }}

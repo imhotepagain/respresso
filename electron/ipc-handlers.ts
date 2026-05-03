@@ -1347,7 +1347,7 @@ export function setupIpcHandlers() {
             const revenueByHour: Record<string, number> = {}
             const expensesByHour: Record<string, number> = {}
 
-            const fmt = (d: Date) => d.toLocaleDateString('en-US', { month: 'short', day: 'numeric' })
+            const fmt = (d: Date) => d.toISOString().split('T')[0]
             const fmtHour = (d: Date) => `${String(d.getHours()).padStart(2, '0')}:00`
 
             // Initialize days in range
