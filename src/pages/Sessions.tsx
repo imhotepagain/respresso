@@ -92,28 +92,39 @@ const TimerCard: React.FC<{
     }, [session, postNumber])
 
     const calculateSuggestedCost = () => {
-        let durationMinutes = session?.limitMinutes ? session.limitMinutes : Math.ceil(elapsed / 60)
+        if (!session) return 0
+        const durationMinutes = Math.ceil(elapsed / 60)
+        const startHour = new Date(session.startTime).getHours()
         
-        // Determine if Day or Evening session
-        const startHour = session ? new Date(session.startTime).getHours() : new Date().getHours()
+        // Define Day vs Evening (Day: 09:00 to 15:00 as per current config)
         const isDaySession = startHour >= 9 && startHour < 15
+        const isPC = postNumber === 6 // PC Gamer is Post 6
 
+        if (isPC) {
+            // PC Gamer: 20 DH per hour (approx 0.33 DH/min)
+            return Math.ceil(durationMinutes * (20 / 60))
+        }
+
+        // PS5 Logic based on provided cards
         if (isDaySession) {
             if (durationMinutes <= 12) return 5
             if (durationMinutes <= 30) return 10
             if (durationMinutes <= 60) return 20
             if (durationMinutes <= 120) return 25
-            // Extra time extrapolation (approx 12.5 DH/hr after 2 hours, round to nearest 5)
-            const extraHours = Math.ceil((durationMinutes - 120) / 60)
-            return 25 + (extraHours * 15)
+            
+            // Beyond 2 hours: Use 12.5 DH/hr (the 2-hour rate) as baseline
+            const extraMinutes = durationMinutes - 120
+            return 25 + Math.ceil(extraMinutes * (12.5 / 60))
         } else {
+            // Evening Logic
             if (durationMinutes <= 12) return 5
             if (durationMinutes <= 30) return 15
             if (durationMinutes <= 60) return 25
             if (durationMinutes <= 120) return 35
-            // Extra time extrapolation (approx 17.5 DH/hr after 2 hours, round to nearest 5)
-            const extraHours = Math.ceil((durationMinutes - 120) / 60)
-            return 35 + (extraHours * 15)
+            
+            // Beyond 2 hours: Use 17.5 DH/hr (the 2-hour rate) as baseline
+            const extraMinutes = durationMinutes - 120
+            return 35 + Math.ceil(extraMinutes * (17.5 / 60))
         }
     }
 
