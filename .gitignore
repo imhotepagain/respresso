@@ -8,3 +8,4 @@ prisma/dev.db-journal
 .vscode
 .DS_Store
 *.log
+main.js
