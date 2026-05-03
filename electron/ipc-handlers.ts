@@ -4,6 +4,20 @@ import bcrypt from 'bcryptjs'
 import pkg from 'electron-pos-printer'
 const { PosPrinter } = pkg
 
+const ALLOWED_PRODUCT_TYPES = new Set(['SNACK', 'DRINK', 'SERVICE'])
+const STOCK_IN_TYPES = new Set(['PURCHASE_RECEIPT', 'OPENING_BALANCE', 'ADJUSTMENT_IN'])
+const STOCK_OUT_TYPES = new Set(['SALE', 'ADJUSTMENT_OUT', 'WASTE', 'RETURN_TO_SUPPLIER'])
+const SUPPORTED_LOG_TYPES = new Set([
+    ...STOCK_IN_TYPES,
+    ...STOCK_OUT_TYPES,
+])
+
+function normalizeInventoryType(type: string, change: number) {
+    if (type === 'RESTOCK') return 'PURCHASE_RECEIPT'
+    if (type === 'ADJUSTMENT') return change >= 0 ? 'ADJUSTMENT_IN' : 'ADJUSTMENT_OUT'
+    return type
+}
+
 export function setupIpcHandlers() {
     const db = getDatabase()
 
@@ -176,7 +190,80 @@ export function setupIpcHandlers() {
 
     ipcMain.handle('products:create', async (_, data: any) => {
         try {
-            const product = await db.product.create({ data })
+            const name = typeof data?.name === 'string' ? data.name.trim() : ''
+            const type = typeof data?.type === 'string' ? data.type : ''
+            const price = Number(data?.price)
+
+            if (!name) {
+                return { success: false, error: 'Product name is required' }
+            }
+            if (!Number.isFinite(price) || price < 0) {
+                return { success: false, error: 'Price must be a valid positive number' }
+            }
+            if (!ALLOWED_PRODUCT_TYPES.has(type)) {
+                return { success: false, error: 'Invalid product category' }
+            }
+
+            let stockMode: 'NONE' | 'PURCHASE_RECEIPT' | 'OPENING_BALANCE' = 'NONE'
+            if (data?.stockMode === 'PURCHASE_RECEIPT' || data?.stockMode === 'OPENING_BALANCE') {
+                stockMode = data.stockMode
+            } else if (data?.stockMode === 'NONE') {
+                stockMode = 'NONE'
+            } else if (Number.isInteger(data?.stock) && data.stock > 0) {
+                // Backward compatibility with old payloads that sent stock directly.
+                stockMode = 'OPENING_BALANCE'
+            }
+
+            const initialStock = Number(data?.initialStock ?? data?.stock ?? 0)
+            const initialCost = Number(data?.initialCost ?? 0)
+
+            if (!Number.isInteger(initialStock) || initialStock < 0) {
+                return { success: false, error: 'Initial stock must be a non-negative whole number' }
+            }
+            if (!Number.isFinite(initialCost) || initialCost < 0) {
+                return { success: false, error: 'Initial cost must be a non-negative number' }
+            }
+            if (type !== 'SERVICE' && stockMode !== 'NONE' && initialStock <= 0) {
+                return { success: false, error: 'Initial stock must be greater than zero for this setup' }
+            }
+
+            const product = await db.$transaction(async (tx: any) => {
+                const createdProduct = await tx.product.create({
+                    data: {
+                        name,
+                        price,
+                        type,
+                        category: data?.category ?? null,
+                        imageUrl: data?.imageUrl ?? null,
+                        stock: type === 'SERVICE' ? 900000 : 0,
+                    }
+                })
+
+                if (type !== 'SERVICE' && stockMode !== 'NONE' && initialStock > 0) {
+                    await tx.product.update({
+                        where: { id: createdProduct.id },
+                        data: {
+                            stock: { increment: initialStock }
+                        }
+                    })
+
+                    await tx.inventoryLog.create({
+                        data: {
+                            productId: createdProduct.id,
+                            userId: data?.userId,
+                            change: initialStock,
+                            cost: initialCost,
+                            type: stockMode,
+                            note: stockMode === 'OPENING_BALANCE'
+                                ? `Opening balance migration (+${initialStock})`
+                                : `Initial purchase (+${initialStock})`
+                        }
+                    })
+                }
+
+                return tx.product.findUnique({ where: { id: createdProduct.id } })
+            })
+
             return { success: true, product }
         } catch (error) {
             console.error('Create product error:', error)
@@ -186,9 +273,53 @@ export function setupIpcHandlers() {
 
     ipcMain.handle('products:update', async (_, { id, data }: { id: string; data: any }) => {
         try {
+            const existingProduct = await db.product.findUnique({ where: { id } })
+            if (!existingProduct) {
+                return { success: false, error: 'Product not found' }
+            }
+            if (typeof data?.stock !== 'undefined') {
+                return { success: false, error: 'Direct stock edits are disabled. Use inventory movements instead.' }
+            }
+            if (typeof data?.type === 'string' && !ALLOWED_PRODUCT_TYPES.has(data.type)) {
+                return { success: false, error: 'Invalid product category' }
+            }
+
+            if (
+                typeof data?.type === 'string' &&
+                data.type !== existingProduct.type &&
+                (data.type === 'SERVICE' || existingProduct.type === 'SERVICE')
+            ) {
+                return { success: false, error: 'Cannot switch product type to/from service after creation' }
+            }
+
+            const updateData: any = {}
+            if (typeof data?.name === 'string') {
+                const name = data.name.trim()
+                if (!name) {
+                    return { success: false, error: 'Product name is required' }
+                }
+                updateData.name = name
+            }
+            if (typeof data?.price !== 'undefined') {
+                const price = Number(data.price)
+                if (!Number.isFinite(price) || price < 0) {
+                    return { success: false, error: 'Price must be a valid positive number' }
+                }
+                updateData.price = price
+            }
+            if (typeof data?.type === 'string') {
+                updateData.type = data.type
+            }
+            if (typeof data?.category !== 'undefined') {
+                updateData.category = data.category
+            }
+            if (typeof data?.imageUrl !== 'undefined') {
+                updateData.imageUrl = data.imageUrl
+            }
+
             const product = await db.product.update({
                 where: { id },
-                data,
+                data: updateData,
             })
             return { success: true, product }
         } catch (error) {
@@ -243,64 +374,117 @@ export function setupIpcHandlers() {
 
     ipcMain.handle('orders:create', async (_, data: any) => {
         try {
-            const order = await db.order.create({
-                data: {
-                    userId: data.userId,
-                    staffId: data.staffId,
-                    total: data.total,
-                    isPaid: data.isPaid,
-                    items: {
-                        create: data.items,
-                    },
-                },
-                include: {
-                    items: {
-                        include: {
-                            product: true,
+            if (!Array.isArray(data?.items) || data.items.length === 0) {
+                return { success: false, error: 'Order must contain at least one item' }
+            }
+
+            const total = Number(data.total)
+            if (!Number.isFinite(total) || total < 0) {
+                return { success: false, error: 'Invalid order total' }
+            }
+
+            const normalizedItems = data.items.map((item: any) => ({
+                productId: item?.productId,
+                quantity: Number(item?.quantity),
+                price: Number(item?.price),
+            }))
+
+            for (const item of normalizedItems) {
+                if (typeof item.productId !== 'string' || !item.productId) {
+                    return { success: false, error: 'Invalid product in order' }
+                }
+                if (!Number.isInteger(item.quantity) || item.quantity <= 0) {
+                    return { success: false, error: 'Order quantities must be positive whole numbers' }
+                }
+                if (!Number.isFinite(item.price) || item.price < 0) {
+                    return { success: false, error: 'Invalid item price in order' }
+                }
+            }
+
+            const order = await db.$transaction(async (tx: any) => {
+                const productIds = [...new Set(normalizedItems.map((item: any) => item.productId))]
+                const orderProducts = await tx.product.findMany({
+                    where: { id: { in: productIds } },
+                    select: { id: true, name: true, stock: true, type: true },
+                })
+
+                const productMap = new Map<string, { id: string; name: string; stock: number; type: string }>(
+                    (orderProducts as any[]).map((product: any) => [product.id, product])
+                )
+
+                for (const item of normalizedItems) {
+                    const product = productMap.get(item.productId)
+                    if (!product) {
+                        throw new Error('One or more products no longer exist')
+                    }
+
+                    if (product.type !== 'SERVICE' && product.stock < item.quantity) {
+                        throw new Error(`Insufficient stock for ${product.name}`)
+                    }
+                }
+
+                const createdOrder = await tx.order.create({
+                    data: {
+                        userId: data.userId,
+                        staffId: data.staffId,
+                        total,
+                        isPaid: Boolean(data.isPaid),
+                        items: {
+                            create: normalizedItems,
                         },
                     },
-                },
+                    include: {
+                        items: {
+                            include: {
+                                product: true,
+                            },
+                        },
+                    },
+                })
+
+                if (!data.isPaid && data.userId) {
+                    await tx.user.update({
+                        where: { id: data.userId },
+                        data: {
+                            balance: {
+                                increment: total,
+                            },
+                        },
+                    })
+                }
+
+                for (const item of normalizedItems) {
+                    const product = productMap.get(item.productId)
+                    if (!product || product.type === 'SERVICE') continue
+
+                    await tx.product.update({
+                        where: { id: item.productId },
+                        data: {
+                            stock: {
+                                decrement: item.quantity,
+                            },
+                        },
+                    })
+
+                    await tx.inventoryLog.create({
+                        data: {
+                            productId: item.productId,
+                            userId: data.staffId,
+                            change: -item.quantity,
+                            type: 'SALE',
+                            note: `Order #${createdOrder.id}`,
+                        },
+                    })
+                }
+
+                return createdOrder
             })
-
-            // Update user balance if not paid (debt)
-            if (!data.isPaid && data.userId) {
-                await db.user.update({
-                    where: { id: data.userId },
-                    data: {
-                        balance: {
-                            increment: data.total,
-                        },
-                    },
-                })
-            }
-
-            // Update product stock
-            for (const item of data.items) {
-                await db.product.update({
-                    where: { id: item.productId },
-                    data: {
-                        stock: {
-                            decrement: item.quantity,
-                        },
-                    },
-                })
-
-                // Log inventory change
-                await db.inventoryLog.create({
-                    data: {
-                        productId: item.productId,
-                        userId: data.staffId,
-                        change: -item.quantity,
-                        type: 'SALE',
-                        note: `Order #${order.id}`,
-                    },
-                })
-            }
 
             return { success: true, order }
         } catch (error) {
             console.error('Create order error:', error)
-            return { success: false, error: 'Failed to create order' }
+            const message = error instanceof Error ? error.message : 'Failed to create order'
+            return { success: false, error: message }
         }
     })
 
@@ -412,35 +596,80 @@ export function setupIpcHandlers() {
 
     ipcMain.handle('inventory:addLog', async (_, data: any) => {
         try {
-            const log = await db.inventoryLog.create({
-                data,
-                include: {
-                    product: true,
-                    user: {
-                        select: {
-                            id: true,
-                            name: true,
-                        },
-                    },
-                },
-            })
+            if (typeof data?.productId !== 'string' || !data.productId) {
+                return { success: false, error: 'A product is required for stock movements' }
+            }
 
-            // Update product stock
-            if (data.productId) {
-                await db.product.update({
+            const change = Number(data?.change)
+            if (!Number.isInteger(change) || change === 0) {
+                return { success: false, error: 'Stock movement must be a non-zero whole number' }
+            }
+
+            const type = normalizeInventoryType(String(data?.type || ''), change)
+            if (!SUPPORTED_LOG_TYPES.has(type)) {
+                return { success: false, error: 'Invalid inventory movement type' }
+            }
+            if (STOCK_IN_TYPES.has(type) && change < 0) {
+                return { success: false, error: 'This movement type requires a positive quantity' }
+            }
+            if (STOCK_OUT_TYPES.has(type) && change > 0) {
+                return { success: false, error: 'This movement type requires a negative quantity' }
+            }
+
+            const cost = Number(data?.cost ?? 0)
+            if (!Number.isFinite(cost) || cost < 0) {
+                return { success: false, error: 'Cost must be a non-negative number' }
+            }
+
+            const log = await db.$transaction(async (tx: any) => {
+                const product = await tx.product.findUnique({
                     where: { id: data.productId },
+                    select: { id: true, name: true, stock: true, type: true }
+                })
+
+                if (!product) {
+                    throw new Error('Product not found')
+                }
+                if (product.type === 'SERVICE') {
+                    throw new Error('Service items do not support stock movements')
+                }
+
+                const nextStock = product.stock + change
+                if (nextStock < 0) {
+                    throw new Error(`Insufficient stock for ${product.name}`)
+                }
+
+                await tx.product.update({
+                    where: { id: product.id },
+                    data: { stock: nextStock }
+                })
+
+                return tx.inventoryLog.create({
                     data: {
-                        stock: {
-                            increment: data.change,
+                        productId: product.id,
+                        userId: data?.userId,
+                        change,
+                        cost,
+                        type,
+                        note: typeof data?.note === 'string' ? data.note : null
+                    },
+                    include: {
+                        product: true,
+                        user: {
+                            select: {
+                                id: true,
+                                name: true,
+                            },
                         },
                     },
                 })
-            }
+            })
 
             return { success: true, log }
         } catch (error) {
             console.error('Add inventory log error:', error)
-            return { success: false, error: 'Failed to add inventory log' }
+            const message = error instanceof Error ? error.message : 'Failed to add inventory log'
+            return { success: false, error: message }
         }
     })
 
@@ -684,11 +913,13 @@ export function setupIpcHandlers() {
                     }
                 }
 
-                if (log.type === 'RESTOCK') {
+                if (['RESTOCK', 'PURCHASE_RECEIPT', 'OPENING_BALANCE', 'ADJUSTMENT_IN'].includes(log.type)) {
                     if (log.productId) {
-                        stats.productStats[log.productId].restocked += log.change
+                        stats.productStats[log.productId].restocked += Math.max(0, log.change)
                     }
-                    if (log.cost) {
+                }
+                if (['RESTOCK', 'PURCHASE_RECEIPT'].includes(log.type) && log.cost) {
+                    if (log.cost > 0) {
                         stats.expenses.total += log.cost
                     }
                 }
@@ -1054,22 +1285,37 @@ export function setupIpcHandlers() {
             const prevDateFilter = { gte: prevStart, lte: prevEnd }
 
             // Current period data
-            const [orders, sessions, expenses, debtPayments] = await Promise.all([
+            const [orders, sessions, expenses, debtPayments, inventoryPurchases] = await Promise.all([
                 db.order.findMany({ 
                     where: { createdAt: dateFilter, isPaid: true },
                     include: { items: { include: { product: true } } }
                 }),
                 db.session.findMany({ where: { createdAt: dateFilter, status: 'COMPLETED' } }),
                 db.expense.findMany({ where: { date: dateFilter } }),
-                db.debtPayment.findMany({ where: { createdAt: dateFilter } })
+                db.debtPayment.findMany({ where: { createdAt: dateFilter } }),
+                db.inventoryLog.findMany({
+                    where: {
+                        createdAt: dateFilter,
+                        type: { in: ['PURCHASE_RECEIPT', 'RESTOCK'] },
+                        cost: { gt: 0 }
+                    },
+                    include: { product: true }
+                })
             ])
 
             // Previous period data (for comparison)
-            const [prevOrders, prevSessions, prevExpenses, prevDebtPayments] = await Promise.all([
+            const [prevOrders, prevSessions, prevExpenses, prevDebtPayments, prevInventoryPurchases] = await Promise.all([
                 db.order.findMany({ where: { createdAt: prevDateFilter, isPaid: true } }),
                 db.session.findMany({ where: { createdAt: prevDateFilter, status: 'COMPLETED' } }),
                 db.expense.findMany({ where: { date: prevDateFilter } }),
-                db.debtPayment.findMany({ where: { createdAt: prevDateFilter } })
+                db.debtPayment.findMany({ where: { createdAt: prevDateFilter } }),
+                db.inventoryLog.findMany({
+                    where: {
+                        createdAt: prevDateFilter,
+                        type: { in: ['PURCHASE_RECEIPT', 'RESTOCK'] },
+                        cost: { gt: 0 }
+                    }
+                })
             ])
 
             // Current period calculations
@@ -1077,14 +1323,18 @@ export function setupIpcHandlers() {
             const revenueFromSessions = sessions.reduce((sum: number, s: any) => sum + (s.cost || 0), 0)
             const revenueFromDebt = debtPayments.reduce((sum: number, p: any) => sum + p.amount, 0)
             const totalRevenue = revenueFromOrders + revenueFromSessions + revenueFromDebt
-            const totalExpenses = expenses.reduce((sum: number, e: any) => sum + e.amount, 0)
+            const explicitExpensesTotal = expenses.reduce((sum: number, e: any) => sum + e.amount, 0)
+            const purchaseExpensesTotal = inventoryPurchases.reduce((sum: number, l: any) => sum + (l.cost || 0), 0)
+            const totalExpenses = explicitExpensesTotal + purchaseExpensesTotal
 
             // Previous period calculations
             const prevRevenueFromOrders = prevOrders.reduce((sum: number, o: any) => sum + o.total, 0)
             const prevRevenueFromSessions = prevSessions.reduce((sum: number, s: any) => sum + (s.cost || 0), 0)
             const prevRevenueFromDebt = prevDebtPayments.reduce((sum: number, p: any) => sum + p.amount, 0)
             const prevTotalRevenue = prevRevenueFromOrders + prevRevenueFromSessions + prevRevenueFromDebt
-            const prevTotalExpenses = prevExpenses.reduce((sum: number, e: any) => sum + e.amount, 0)
+            const prevExplicitExpensesTotal = prevExpenses.reduce((sum: number, e: any) => sum + e.amount, 0)
+            const prevPurchaseExpensesTotal = prevInventoryPurchases.reduce((sum: number, l: any) => sum + (l.cost || 0), 0)
+            const prevTotalExpenses = prevExplicitExpensesTotal + prevPurchaseExpensesTotal
             const prevProfit = prevTotalRevenue - prevTotalExpenses
 
             // Delta calculations (percentage change)
@@ -1110,12 +1360,21 @@ export function setupIpcHandlers() {
             sessions.forEach((s: any) => { const k = fmt(s.createdAt); revenueByDay[k] = (revenueByDay[k] || 0) + (s.cost || 0) })
             debtPayments.forEach((p: any) => { const k = fmt(p.createdAt); revenueByDay[k] = (revenueByDay[k] || 0) + p.amount })
             expenses.forEach((e: any) => { const k = fmt(e.date); expensesByDay[k] = (expensesByDay[k] || 0) + e.amount })
+            inventoryPurchases.forEach((l: any) => {
+                const k = fmt(l.createdAt)
+                expensesByDay[k] = (expensesByDay[k] || 0) + (l.cost || 0)
+            })
 
             // Expense breakdown by category for P&L
             const expensesByCategory: Record<string, number> = {}
             expenses.forEach((e: any) => {
                 const cat = e.category || 'Other'
                 expensesByCategory[cat] = (expensesByCategory[cat] || 0) + e.amount
+            })
+            inventoryPurchases.forEach((l: any) => {
+                const productName = l.product?.name || 'Unknown Product'
+                const cat = `Inventory Purchase: ${productName}`
+                expensesByCategory[cat] = (expensesByCategory[cat] || 0) + (l.cost || 0)
             })
 
             // Product Sales Breakdown
@@ -1406,5 +1665,3 @@ export function setupIpcHandlers() {
 
     console.log('✅ IPC handlers registered')
 }
-
-

@@ -142,6 +142,31 @@ export interface ApiResponse<T> {
     data?: T
 }
 
+export type InventoryMovementType =
+    | 'SALE'
+    | 'PURCHASE_RECEIPT'
+    | 'OPENING_BALANCE'
+    | 'ADJUSTMENT_IN'
+    | 'ADJUSTMENT_OUT'
+    | 'WASTE'
+    | 'RETURN_TO_SUPPLIER'
+    | 'RESTOCK'
+    | 'ADJUSTMENT'
+
+export interface CreateProductInput {
+    name: string
+    price: number
+    type: string
+    category: string | null
+    imageUrl: string | null
+    stockMode?: 'NONE' | 'PURCHASE_RECEIPT' | 'OPENING_BALANCE'
+    initialStock?: number
+    initialCost?: number
+    userId?: string
+    // Backward compatibility for older calls.
+    stock?: number
+}
+
 // API interface that will be exposed via window.api
 export interface ElectronAPI {
     // Auth
@@ -159,7 +184,7 @@ export interface ElectronAPI {
     // Products
     getAllProducts: () => Promise<{ success: boolean; products?: Product[]; error?: string }>
     getProductById: (id: string) => Promise<{ success: boolean; product?: Product; error?: string }>
-    createProduct: (data: Omit<Product, 'id' | 'createdAt' | 'updatedAt'>) => Promise<{ success: boolean; product?: Product; error?: string }>
+    createProduct: (data: CreateProductInput) => Promise<{ success: boolean; product?: Product; error?: string }>
     updateProduct: (id: string, data: Partial<Product>) => Promise<{ success: boolean; product?: Product; error?: string }>
     deleteProduct: (id: string) => Promise<{ success: boolean; error?: string }>
 
@@ -186,7 +211,7 @@ export interface ElectronAPI {
         userId?: string
         change: number
         cost?: number
-        type: string
+        type: InventoryMovementType
         note?: string
     }) => Promise<{ success: boolean; log?: InventoryLog; error?: string }>
 

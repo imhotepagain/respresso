@@ -63,9 +63,11 @@ export const Inventory: React.FC = () => {
     const [formData, setFormData] = useState({
         name: "",
         price: "",
-        type: "SNACK",
-        stock: "0"
+        type: "SNACK"
     })
+    const [stockSetupMode, setStockSetupMode] = useState<'NONE' | 'PURCHASE_RECEIPT' | 'OPENING_BALANCE'>('NONE')
+    const [initialStock, setInitialStock] = useState("")
+    const [initialCost, setInitialCost] = useState("")
     
     const [restockAmount, setRestockAmount] = useState("")
     const [restockCost, setRestockCost] = useState("")
@@ -89,18 +91,45 @@ export const Inventory: React.FC = () => {
             return
         }
 
+        const price = parseFloat(formData.price)
+        if (!Number.isFinite(price) || price < 0) {
+            toast.error("Price must be a valid positive number")
+            return
+        }
+
+        const mode = formData.type === 'SERVICE' ? 'NONE' : stockSetupMode
+        const parsedInitialStock = initialStock ? parseInt(initialStock) : 0
+        const parsedInitialCost = initialCost ? parseFloat(initialCost) : 0
+
+        if (mode !== 'NONE') {
+            if (!Number.isInteger(parsedInitialStock) || parsedInitialStock <= 0) {
+                toast.error("Initial stock must be greater than zero")
+                return
+            }
+            if (!Number.isFinite(parsedInitialCost) || parsedInitialCost < 0) {
+                toast.error("Initial cost must be a valid non-negative number")
+                return
+            }
+        }
+
         const result = await window.api.createProduct({
-            name: formData.name,
-            price: parseFloat(formData.price),
+            name: formData.name.trim(),
+            price,
             type: formData.type as any,
             category: null,
-            stock: parseInt(formData.stock) || 0,
-            imageUrl: null
+            imageUrl: null,
+            stockMode: mode,
+            initialStock: mode === 'NONE' ? 0 : parsedInitialStock,
+            initialCost: mode === 'NONE' ? 0 : parsedInitialCost,
+            userId: currentUser?.id
         })
 
         if (result.success) {
             setIsAddOpen(false)
-            setFormData({ name: "", price: "", type: "SNACK", stock: "0" })
+            setFormData({ name: "", price: "", type: "SNACK" })
+            setStockSetupMode('NONE')
+            setInitialStock("")
+            setInitialCost("")
             fetchProducts()
             toast.success("Product created successfully")
         } else {
@@ -114,11 +143,16 @@ export const Inventory: React.FC = () => {
             return
         }
 
+        const price = parseFloat(formData.price)
+        if (!Number.isFinite(price) || price < 0) {
+            toast.error("Price must be a valid positive number")
+            return
+        }
+
         const result = await window.api.updateProduct(selectedProduct.id, {
             name: formData.name,
-            price: parseFloat(formData.price),
+            price,
             type: formData.type as any,
-            stock: parseInt(formData.stock) || 0,
         })
 
         if (result.success) {
@@ -137,7 +171,6 @@ export const Inventory: React.FC = () => {
             name: product.name,
             price: product.price.toString(),
             type: product.type,
-            stock: product.stock.toString()
         })
         setIsEditOpen(true)
     }
@@ -150,13 +183,21 @@ export const Inventory: React.FC = () => {
 
         const amount = parseInt(restockAmount)
         const cost = parseFloat(restockCost) || 0
+        if (!Number.isInteger(amount) || amount <= 0) {
+            toast.error("Restock amount must be greater than zero")
+            return
+        }
+        if (!Number.isFinite(cost) || cost < 0) {
+            toast.error("Restock cost must be a valid non-negative number")
+            return
+        }
 
         const result = await window.api.addInventoryLog({
             productId: selectedProduct.id,
             userId: currentUser?.id,
             change: amount,
             cost: cost,
-            type: 'RESTOCK',
+            type: 'PURCHASE_RECEIPT',
             note: `Manual restock: +${amount}`
         })
 
@@ -245,7 +286,12 @@ export const Inventory: React.FC = () => {
 
                 <Dialog open={isAddOpen} onOpenChange={(val) => {
                     setIsAddOpen(val)
-                    if (val) setFormData({ name: "", price: "", type: "SNACK", stock: "0" })
+                    if (val) {
+                        setFormData({ name: "", price: "", type: "SNACK" })
+                        setStockSetupMode('NONE')
+                        setInitialStock("")
+                        setInitialCost("")
+                    }
                 }}>
                     <DialogTrigger asChild>
                         <Button className="font-bold h-12 px-6">
@@ -269,14 +315,17 @@ export const Inventory: React.FC = () => {
                                     <Label htmlFor="add-price" className="text-xs font-bold uppercase tracking-widest text-muted-foreground">Price (DH)</Label>
                                     <Input id="add-price" type="number" value={formData.price} onChange={e => setFormData({ ...formData, price: e.target.value })} className="font-bold" />
                                 </div>
-                                <div className="grid gap-2">
-                                    <Label htmlFor="add-stock" className="text-xs font-bold uppercase tracking-widest text-muted-foreground">Initial Stock</Label>
-                                    <Input id="add-stock" type="number" value={formData.stock} onChange={e => setFormData({ ...formData, stock: e.target.value })} className="font-bold" />
-                                </div>
                             </div>
                             <div className="grid gap-2">
                                 <Label htmlFor="add-type" className="text-xs font-bold uppercase tracking-widest text-muted-foreground">Category</Label>
-                                <Select value={formData.type} onValueChange={val => setFormData({ ...formData, type: val })}>
+                                <Select value={formData.type} onValueChange={val => {
+                                    setFormData({ ...formData, type: val })
+                                    if (val === 'SERVICE') {
+                                        setStockSetupMode('NONE')
+                                        setInitialStock("")
+                                        setInitialCost("")
+                                    }
+                                }}>
                                     <SelectTrigger className="font-bold">
                                         <SelectValue />
                                     </SelectTrigger>
@@ -287,6 +336,53 @@ export const Inventory: React.FC = () => {
                                     </SelectContent>
                                 </Select>
                             </div>
+                            {formData.type !== 'SERVICE' && (
+                                <>
+                                    <div className="grid gap-2">
+                                        <Label htmlFor="stock-mode" className="text-xs font-bold uppercase tracking-widest text-muted-foreground">
+                                            Initial Stock Source
+                                        </Label>
+                                        <Select value={stockSetupMode} onValueChange={(val: 'NONE' | 'PURCHASE_RECEIPT' | 'OPENING_BALANCE') => setStockSetupMode(val)}>
+                                            <SelectTrigger id="stock-mode" className="font-bold">
+                                                <SelectValue />
+                                            </SelectTrigger>
+                                            <SelectContent>
+                                                <SelectItem value="NONE">No Opening Stock</SelectItem>
+                                                <SelectItem value="PURCHASE_RECEIPT">Purchased Now (From Net Profit)</SelectItem>
+                                                <SelectItem value="OPENING_BALANCE">Existed Before Software (Opening Balance)</SelectItem>
+                                            </SelectContent>
+                                        </Select>
+                                    </div>
+                                    {stockSetupMode !== 'NONE' && (
+                                        <div className="grid grid-cols-2 gap-4">
+                                            <div className="grid gap-2">
+                                                <Label htmlFor="initial-stock" className="text-xs font-bold uppercase tracking-widest text-muted-foreground">
+                                                    Initial Quantity
+                                                </Label>
+                                                <Input
+                                                    id="initial-stock"
+                                                    type="number"
+                                                    value={initialStock}
+                                                    onChange={e => setInitialStock(e.target.value)}
+                                                    className="font-bold"
+                                                />
+                                            </div>
+                                            <div className="grid gap-2">
+                                                <Label htmlFor="initial-cost" className="text-xs font-bold uppercase tracking-widest text-muted-foreground">
+                                                    {stockSetupMode === 'OPENING_BALANCE' ? 'Initial Value (DH)' : 'Purchase Cost (DH)'}
+                                                </Label>
+                                                <Input
+                                                    id="initial-cost"
+                                                    type="number"
+                                                    value={initialCost}
+                                                    onChange={e => setInitialCost(e.target.value)}
+                                                    className="font-bold"
+                                                />
+                                            </div>
+                                        </div>
+                                    )}
+                                </>
+                            )}
                         </div>
                         <DialogFooter>
                             <Button variant="outline" onClick={() => setIsAddOpen(false)} className="font-bold">Cancel</Button>
@@ -600,15 +696,9 @@ export const Inventory: React.FC = () => {
                             <Label htmlFor="edit-name" className="text-xs font-bold uppercase tracking-widest text-muted-foreground">Name</Label>
                             <Input id="edit-name" value={formData.name} onChange={e => setFormData({ ...formData, name: e.target.value })} className="font-bold" />
                         </div>
-                        <div className="grid grid-cols-2 gap-4">
-                            <div className="grid gap-2">
-                                <Label htmlFor="edit-price" className="text-xs font-bold uppercase tracking-widest text-muted-foreground">Price (DH)</Label>
-                                <Input id="edit-price" type="number" value={formData.price} onChange={e => setFormData({ ...formData, price: e.target.value })} className="font-bold" />
-                            </div>
-                            <div className="grid gap-2">
-                                <Label htmlFor="edit-stock" className="text-xs font-bold uppercase tracking-widest text-muted-foreground">Stock</Label>
-                                <Input id="edit-stock" type="number" value={formData.stock} onChange={e => setFormData({ ...formData, stock: e.target.value })} className="font-bold" />
-                            </div>
+                        <div className="grid gap-2">
+                            <Label htmlFor="edit-price" className="text-xs font-bold uppercase tracking-widest text-muted-foreground">Price (DH)</Label>
+                            <Input id="edit-price" type="number" value={formData.price} onChange={e => setFormData({ ...formData, price: e.target.value })} className="font-bold" />
                         </div>
                         <div className="grid gap-2">
                             <Label htmlFor="edit-type" className="text-xs font-bold uppercase tracking-widest text-muted-foreground">Category</Label>
@@ -623,6 +713,9 @@ export const Inventory: React.FC = () => {
                                 </SelectContent>
                             </Select>
                         </div>
+                        <p className="text-xs text-muted-foreground">
+                            To change stock, use Restock or inventory movement actions so changes stay auditable.
+                        </p>
                     </div>
                     <DialogFooter>
                         <Button variant="outline" onClick={() => { setIsEditOpen(false); setSelectedProduct(null); }} className="font-bold">Cancel</Button>

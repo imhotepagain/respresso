@@ -79,6 +79,9 @@ export function FinancialAnalytics({ from, to }: FinancialAnalyticsProps) {
         revenue: rev.amount,
         expenses: stats.expensesByDay[idx]?.amount || 0
     }))
+    const revenueChartColor = '#22c55e'
+    const expenseChartColor = '#f43f5e'
+    const axisTickColor = 'hsl(var(--muted-foreground))'
 
     return (
         <div className="space-y-6 animate-in fade-in duration-500">
@@ -167,11 +170,11 @@ export function FinancialAnalytics({ from, to }: FinancialAnalyticsProps) {
                         </div>
                         <div className="flex gap-4">
                             <div className="flex items-center gap-2">
-                                <div className="w-3 h-3 rounded-full bg-emerald-500" />
+                                <div className="w-3 h-3 rounded-full" style={{ backgroundColor: revenueChartColor }} />
                                 <span className="text-[10px] font-black uppercase tracking-widest">Revenue</span>
                             </div>
                             <div className="flex items-center gap-2">
-                                <div className="w-3 h-3 rounded-full bg-destructive" />
+                                <div className="w-3 h-3 rounded-full" style={{ backgroundColor: expenseChartColor }} />
                                 <span className="text-[10px] font-black uppercase tracking-widest">Expenses</span>
                             </div>
                         </div>
@@ -182,24 +185,24 @@ export function FinancialAnalytics({ from, to }: FinancialAnalyticsProps) {
                         <AreaChart data={chartData} margin={{ top: 10, right: 10, left: 0, bottom: 0 }}>
                             <defs>
                                 <linearGradient id="colorRevFinance" x1="0" y1="0" x2="0" y2="1">
-                                    <stop offset="5%" stopColor="#10b981" stopOpacity={0.3} />
-                                    <stop offset="95%" stopColor="#10b981" stopOpacity={0} />
+                                    <stop offset="5%" stopColor={revenueChartColor} stopOpacity={0.45} />
+                                    <stop offset="95%" stopColor={revenueChartColor} stopOpacity={0} />
                                 </linearGradient>
                                 <linearGradient id="colorExpFinance" x1="0" y1="0" x2="0" y2="1">
-                                    <stop offset="5%" stopColor="hsl(var(--destructive))" stopOpacity={0.3} />
-                                    <stop offset="95%" stopColor="hsl(var(--destructive))" stopOpacity={0} />
+                                    <stop offset="5%" stopColor={expenseChartColor} stopOpacity={0.45} />
+                                    <stop offset="95%" stopColor={expenseChartColor} stopOpacity={0} />
                                 </linearGradient>
                             </defs>
                             <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="hsl(var(--border))" opacity={0.4} />
                             <XAxis
                                 dataKey="date"
-                                tick={{ fontSize: 10, fontWeight: 700, fill: '#94a3b8' }}
+                                tick={{ fontSize: 10, fontWeight: 700, fill: axisTickColor }}
                                 axisLine={false}
                                 tickLine={false}
                                 dy={8}
                             />
                             <YAxis
-                                tick={{ fontSize: 10, fontWeight: 700, fill: '#94a3b8' }}
+                                tick={{ fontSize: 10, fontWeight: 700, fill: axisTickColor }}
                                 axisLine={false}
                                 tickLine={false}
                                 dx={-5}
@@ -220,8 +223,8 @@ export function FinancialAnalytics({ from, to }: FinancialAnalyticsProps) {
                                 type="monotone"
                                 dataKey="revenue"
                                 name="Revenue"
-                                stroke="#10b981"
-                                strokeWidth={2.5}
+                                stroke={revenueChartColor}
+                                strokeWidth={3}
                                 fillOpacity={1}
                                 fill="url(#colorRevFinance)"
                             />
@@ -229,8 +232,8 @@ export function FinancialAnalytics({ from, to }: FinancialAnalyticsProps) {
                                 type="monotone"
                                 dataKey="expenses"
                                 name="Expenses"
-                                stroke="hsl(var(--destructive))"
-                                strokeWidth={2.5}
+                                stroke={expenseChartColor}
+                                strokeWidth={3}
                                 fillOpacity={1}
                                 fill="url(#colorExpFinance)"
                             />

@@ -111,8 +111,11 @@ export function ActivityLog({ initialUserId }: ActivityLogProps) {
                             <SelectContent>
                                 <SelectItem value="ALL">All Activity</SelectItem>
                                 <SelectItem value="SALE">Sale (Out)</SelectItem>
-                                <SelectItem value="RESTOCK">Restock (In)</SelectItem>
-                                <SelectItem value="ADJUSTMENT">Adjustment</SelectItem>
+                                <SelectItem value="PURCHASE_RECEIPT">Purchase Receipt (In)</SelectItem>
+                                <SelectItem value="OPENING_BALANCE">Opening Balance (In)</SelectItem>
+                                <SelectItem value="ADJUSTMENT_IN">Adjustment In</SelectItem>
+                                <SelectItem value="ADJUSTMENT_OUT">Adjustment Out</SelectItem>
+                                <SelectItem value="RESTOCK">Legacy Restock (In)</SelectItem>
                                 <SelectItem value="PAYMENT">Debt Payment</SelectItem>
                             </SelectContent>
                         </Select>
