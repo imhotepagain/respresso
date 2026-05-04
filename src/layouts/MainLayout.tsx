@@ -45,9 +45,16 @@ export const MainLayout: React.FC<{ children: React.ReactNode }> = ({ children }
             const endOfDay = new Date()
             endOfDay.setHours(23, 59, 59, 999)
 
+            const fmt = (d: Date) => {
+                const year = d.getFullYear();
+                const month = String(d.getMonth() + 1).padStart(2, '0');
+                const day = String(d.getDate()).padStart(2, '0');
+                return `${year}-${month}-${day}`;
+            }
+
             const res = await window.api.getFinancialStats({
-                from: startOfDay.toISOString(),
-                to: endOfDay.toISOString()
+                from: fmt(startOfDay),
+                to: fmt(endOfDay)
             })
             if (res.success && res.stats) {
                 setTodayRevenue(res.stats.revenue)

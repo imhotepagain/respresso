@@ -1,13 +1,13 @@
 import React, { useState, useEffect } from 'react'
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "../ui/card"
-import { 
-    Loader2, 
-    TrendingUp, 
-    TrendingDown, 
-    Wallet, 
-    ShoppingBag, 
-    Gamepad2, 
-    ArrowLeft, 
+import {
+    Loader2,
+    TrendingUp,
+    TrendingDown,
+    Wallet,
+    ShoppingBag,
+    Gamepad2,
+    ArrowLeft,
     Calendar,
     ChevronRight,
     Package,
@@ -16,7 +16,8 @@ import {
     ArrowUpRight,
     ArrowDownRight,
     Trophy,
-    History
+    History,
+    Activity
 } from 'lucide-react'
 import { Button } from "../ui/button"
 import { cn } from '@/lib/utils'
@@ -82,12 +83,15 @@ export const DailyReportDetail: React.FC<DailyReportDetailProps> = ({ date, onBa
                     </Button>
                     <div>
                         <h1 className="text-3xl font-black tracking-tight flex items-center gap-3">
-                            <Calendar className="h-8 w-8 text-primary" /> 
+                            <Calendar className="h-8 w-8 text-primary" />
                             {new Date(date).toLocaleDateString('en-US', { weekday: 'long', month: 'long', day: 'numeric', year: 'numeric' })}
                         </h1>
                         <p className="text-muted-foreground font-medium">Complete audit of all activities and financial movements for this day.</p>
                     </div>
                 </div>
+                <Button variant="outline" size="sm" className="font-black h-10 border-2 gap-2" onClick={fetchDetails}>
+                    <Activity className="h-4 w-4" /> Refresh Day Data
+                </Button>
             </div>
 
             {/* KPI Summary */}
@@ -206,7 +210,7 @@ export const DailyReportDetail: React.FC<DailyReportDetailProps> = ({ date, onBa
                             <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
                                 {topProducts.map((p: any, idx: number) => (
                                     <div key={p.name} className="p-4 rounded-xl bg-muted/30 border-2 border-transparent hover:border-primary/20 transition-colors">
-                                        <div className="text-[10px] font-black uppercase tracking-widest text-muted-foreground mb-1">Rank #{idx+1}</div>
+                                        <div className="text-[10px] font-black uppercase tracking-widest text-muted-foreground mb-1">Rank #{idx + 1}</div>
                                         <div className="font-black truncate mb-2">{p.name}</div>
                                         <div className="flex justify-between items-end">
                                             <div>
@@ -236,7 +240,7 @@ export const DailyReportDetail: React.FC<DailyReportDetailProps> = ({ date, onBa
                                 <Package className="h-4 w-4" /> Inventory Movements
                             </CardTitle>
                         </CardHeader>
-                        <CardContent className="p-4 space-y-4 max-h-[600px] overflow-y-auto">
+                        <CardContent className="p-4 space-y-4 h-[620px] overflow-y-auto">
                             {inventoryMovements.length === 0 ? (
                                 <p className="text-center py-10 text-muted-foreground font-medium italic">No inventory activity today.</p>
                             ) : (
@@ -300,9 +304,9 @@ export const DailyReportDetail: React.FC<DailyReportDetailProps> = ({ date, onBa
                                     </TableCell>
                                     <TableCell>
                                         <div className="flex items-center gap-2">
-                                            {event.eventType === 'ORDER' ? <ShoppingBag className="h-3 w-3 text-blue-500" /> : 
-                                             event.eventType === 'SESSION' ? <Gamepad2 className="h-3 w-3 text-purple-500" /> : 
-                                             <Wallet className="h-3 w-3 text-emerald-500" />}
+                                            {event.eventType === 'ORDER' ? <ShoppingBag className="h-3 w-3 text-blue-500" /> :
+                                                event.eventType === 'SESSION' ? <Gamepad2 className="h-3 w-3 text-purple-500" /> :
+                                                    <Wallet className="h-3 w-3 text-emerald-500" />}
                                             <span className="font-black text-xs uppercase tracking-wider">{event.eventType}</span>
                                         </div>
                                     </TableCell>

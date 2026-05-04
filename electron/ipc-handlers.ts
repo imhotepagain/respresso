@@ -1275,10 +1275,12 @@ export function setupIpcHandlers() {
     ipcMain.handle('reports:getFinancialStats', async (_, options: { from: string; to: string }) => {
         try {
             const isSingleDayRange = options.from === options.to
-            const startDate = new Date(options.from)
-            startDate.setHours(0, 0, 0, 0)
-            const endDate = new Date(options.to)
-            endDate.setHours(23, 59, 59, 999)
+            // Parse "YYYY-MM-DD" in local time
+            const [y1, m1, d1] = options.from.split('-').map(Number)
+            const startDate = new Date(y1, m1 - 1, d1, 0, 0, 0, 0)
+
+            const [y2, m2, d2] = options.to.split('-').map(Number)
+            const endDate = new Date(y2, m2 - 1, d2, 23, 59, 59, 999)
 
             const dateFilter = { gte: startDate, lte: endDate }
 
@@ -1302,7 +1304,7 @@ export function setupIpcHandlers() {
                 db.inventoryLog.findMany({
                     where: {
                         createdAt: dateFilter,
-                        type: { in: ['PURCHASE_RECEIPT', 'RESTOCK'] },
+                        type: { in: ['PURCHASE_RECEIPT', 'RESTOCK', 'ADJUSTMENT_IN', 'OPENING_BALANCE'] },
                         cost: { gt: 0 }
                     },
                     include: { product: true }
@@ -1352,7 +1354,12 @@ export function setupIpcHandlers() {
             const revenueByHour: Record<string, number> = {}
             const expensesByHour: Record<string, number> = {}
 
-            const fmt = (d: Date) => d.toISOString().split('T')[0]
+            const fmt = (d: Date) => {
+                const year = d.getFullYear();
+                const month = String(d.getMonth() + 1).padStart(2, '0');
+                const day = String(d.getDate()).padStart(2, '0');
+                return `${year}-${month}-${day}`;
+            }
             const fmtHour = (d: Date) => `${String(d.getHours()).padStart(2, '0')}:00`
 
             // Initialize days in range
@@ -1497,11 +1504,11 @@ export function setupIpcHandlers() {
 
     ipcMain.handle('reports:getDailyDetails', async (_, options: { date: string }) => {
         try {
-            const dayStart = new Date(options.date)
+            const [y, m, d] = options.date.split('-').map(Number)
+            const dayStart = new Date(y, m - 1, d, 0, 0, 0, 0)
             if (Number.isNaN(dayStart.getTime())) {
                 return { success: false, error: 'Invalid date' }
             }
-            dayStart.setHours(0, 0, 0, 0)
             const dayEnd = new Date(dayStart)
             dayEnd.setHours(23, 59, 59, 999)
             const dateFilter = { gte: dayStart, lte: dayEnd }
@@ -1643,10 +1650,10 @@ export function setupIpcHandlers() {
 
     ipcMain.handle('reports:getStaffPerformance', async (_, options: { from: string; to: string }) => {
         try {
-            const startDate = new Date(options.from)
-            startDate.setHours(0, 0, 0, 0)
-            const endDate = new Date(options.to)
-            endDate.setHours(23, 59, 59, 999)
+            const [y1, m1, d1] = options.from.split('-').map(Number)
+            const startDate = new Date(y1, m1 - 1, d1, 0, 0, 0, 0)
+            const [y2, m2, d2] = options.to.split('-').map(Number)
+            const endDate = new Date(y2, m2 - 1, d2, 23, 59, 59, 999)
             const dateFilter = { gte: startDate, lte: endDate }
 
             // Get all staff/owner users

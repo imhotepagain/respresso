@@ -12,6 +12,7 @@ import {
     ArrowLeft,
 } from 'lucide-react'
 import { Button } from "@/components/ui/button"
+import { cn } from "@/lib/utils"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
 import { useAuth } from "@/providers/AuthProvider"
@@ -24,7 +25,10 @@ import { toast } from "sonner"
 
 // Helper to format date as YYYY-MM-DD for input[type="date"]
 const formatDateInput = (date: Date) => {
-    return date.toISOString().split('T')[0]
+    const year = date.getFullYear();
+    const month = String(date.getMonth() + 1).padStart(2, '0');
+    const day = String(date.getDate()).padStart(2, '0');
+    return `${year}-${month}-${day}`;
 }
 
 // Preset range helpers
@@ -64,6 +68,9 @@ export const Reports: React.FC = () => {
     const [activeTab, setActiveTab] = useState("financial")
     const [view, setView] = useState<'main' | 'daily' | 'detail'>('main')
     const [selectedDate, setSelectedDate] = useState<string | null>(null)
+    const [refreshKey, setRefreshKey] = useState(0)
+
+    const triggerRefresh = () => setRefreshKey(prev => prev + 1)
 
     // Date range state — default to last 7 days
     const [dateRange, setDateRange] = useState(() => {
@@ -196,6 +203,7 @@ export const Reports: React.FC = () => {
                     </div>
                 </div>
                 <DailySnapshots 
+                    key={`snap-${refreshKey}`}
                     from={dateRange.from} 
                     to={dateRange.to} 
                     onSelectDay={(date) => {
@@ -222,16 +230,30 @@ export const Reports: React.FC = () => {
             <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4">
                 <div>
                     <h1 className="text-4xl font-black tracking-tight flex items-center gap-3">
-                        <BarChartIcon className="h-10 w-10 text-primary" /> Reports
+                        <BarChartIcon className="h-10 w-10 text-primary" /> Reports & Analytics
                     </h1>
-                    <p className="text-muted-foreground font-medium">Business intelligence and performance analytics.</p>
+                    <p className="text-muted-foreground font-medium uppercase text-[10px] tracking-[0.2em] mt-1">Audit, Performance, and Business Intelligence</p>
                 </div>
-                <div className="flex items-center gap-3">
-                    <Button variant="outline" className="font-bold h-12 px-6 border-2" onClick={() => setView('daily')}>
-                        <CalendarDays className="h-4 w-4 mr-2" /> Daily Reports
+
+                <div className="flex items-center gap-2">
+                    <Button 
+                        variant="outline" 
+                        size="sm"
+                        className="font-black h-10 border-2 gap-2" 
+                        onClick={() => setView('daily')}
+                    >
+                        <CalendarDays className="h-4 w-4" /> Daily Audits
                     </Button>
-                    <Button variant="default" className="font-bold h-12 px-6" onClick={handleExport}>
-                        <Download className="h-4 w-4 mr-2" /> Export CSV
+                    <Button
+                        variant="outline"
+                        size="sm"
+                        className="font-black h-10 border-2 gap-2 text-primary border-primary/20 bg-primary/5"
+                        onClick={triggerRefresh}
+                    >
+                        <Activity className={cn("h-4 w-4", refreshKey > 0 && "animate-pulse")} /> Refresh
+                    </Button>
+                    <Button className="font-black h-10 px-6 gap-2" onClick={handleExport}>
+                        <Download className="h-4 w-4" /> Export CSV
                     </Button>
                 </div>
             </div>
@@ -301,19 +323,18 @@ export const Reports: React.FC = () => {
                     </TabsTrigger>
                 </TabsList>
 
-                <TabsContent value="financial" className="space-y-6">
-                    <FinancialAnalytics from={dateRange.from} to={dateRange.to} />
+                <TabsContent value="financial" className="mt-0 animate-in fade-in slide-in-from-bottom-2 duration-500">
+                    <FinancialAnalytics key={`fin-${refreshKey}`} from={dateRange.from} to={dateRange.to} />
                 </TabsContent>
 
-                <TabsContent value="staff" className="space-y-6">
-                    <StaffPerformance from={dateRange.from} to={dateRange.to} />
+                <TabsContent value="staff" className="mt-0 animate-in fade-in slide-in-from-bottom-2 duration-500">
+                    <StaffPerformance key={`perf-${refreshKey}`} from={dateRange.from} to={dateRange.to} />
                 </TabsContent>
 
-                <TabsContent value="activity" className="space-y-6">
-                    <ActivityLog />
+                <TabsContent value="activity" className="mt-0 animate-in fade-in slide-in-from-bottom-2 duration-500">
+                    <ActivityLog key={`act-${refreshKey}`} />
                 </TabsContent>
             </Tabs>
         </div>
     )
 }
-
