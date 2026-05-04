@@ -24,8 +24,8 @@ export const DailySnapshots: React.FC<DailySnapshotsProps> = ({ from, to, onSele
             const result = await window.api.getFinancialStats({ from, to })
             if (result.success && result.stats) {
                 // Combine revenueByDay and expensesByDay
-                const combined = result.stats.revenueByDay.map((rev: any, idx: number) => {
-                    const exp = result.stats.expensesByDay.find((e: any) => e.date === rev.date) || { amount: 0 }
+                const combined = result.stats.revenueByDay.map((rev: any) => {
+                    const exp = result.stats!.expensesByDay.find((e: any) => e.date === rev.date) || { amount: 0 }
                     return {
                         date: rev.date,
                         revenue: rev.amount,

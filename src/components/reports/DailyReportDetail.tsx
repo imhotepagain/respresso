@@ -9,12 +9,7 @@ import {
     Gamepad2,
     ArrowLeft,
     Calendar,
-    ChevronRight,
     Package,
-    Clock,
-    User,
-    ArrowUpRight,
-    ArrowDownRight,
     Trophy,
     History,
     Activity
@@ -294,10 +289,10 @@ export const DailyReportDetail: React.FC<DailyReportDetailProps> = ({ date, onBa
                         <TableBody>
                             {/* Combine all events into a single sorted timeline */}
                             {[
-                                ...orders.map(o => ({ ...o, eventType: 'ORDER', timestamp: new Date(o.createdAt).getTime() })),
-                                ...sessions.map(s => ({ ...s, eventType: 'SESSION', timestamp: new Date(s.startTime).getTime() })),
-                                ...debtPayments.map(p => ({ ...p, eventType: 'PAYMENT', timestamp: new Date(p.createdAt).getTime() }))
-                            ].sort((a, b) => b.timestamp - a.timestamp).map((event: any, idx: number) => (
+                                ...orders.map((o: any) => ({ ...o, eventType: 'ORDER', timestamp: new Date(o.createdAt).getTime() })),
+                                ...sessions.map((s: any) => ({ ...s, eventType: 'SESSION', timestamp: new Date(s.startTime).getTime() })),
+                                ...debtPayments.map((p: any) => ({ ...p, eventType: 'PAYMENT', timestamp: new Date(p.createdAt).getTime() }))
+                            ].sort((a: any, b: any) => b.timestamp - a.timestamp).map((event: any, idx: number) => (
                                 <TableRow key={idx} className="hover:bg-muted/20 transition-colors">
                                     <TableCell className="font-bold text-xs">
                                         {new Date(event.timestamp).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
